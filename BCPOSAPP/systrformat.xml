@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<CONFIG>
+
+	<MASTER_TABLE>
+		<TABLE Name="bcar" />
+		<TABLE Name="bcap" />
+		<TABLE Name="bcitem" />
+	</MASTER_TABLE>
+	<!--bill balance table-->
+	<BILLBALANCE_TABLE>
+		<TABLE Name="bcarinvoice" />
+		<TABLE Name="bccreditnote" />
+		<TABLE Name="bcardeposit" />
+		<TABLE Name="bcapinvoice" />
+		<TABLE Name="bcdebitnote2" />
+		<TABLE Name="bcdebitnote1" />
+		<TABLE Name="bcapdeposit" />
+		<TABLE Name="bcstkrefund" />
+		<TABLE Name="bcstkrefund" />
+		<TABLE Name="bcardepositspecial" />
+		<TABLE Name="bcapdepositspecial" />
+		<TABLE Name="bcapreturndepspecial" />
+		<TABLE Name="bcarreturndepspecial" />
+		<TABLE Name="bcreturndepspecial" />
+		<TABLE Name="bcarotherdebt" />
+		<TABLE Name="bcapotherdebt" />
+	</BILLBALANCE_TABLE>
+	
+
+	<!--billstatus table-->
+	<BILLSTATUS_TABLE>
+		<TABLE Name="bcsaleorder" />
+		<TABLE Name="bcquotation" />
+		<TABLE Name="bcpurchaseorder" />
+		<TABLE Name="bcstkrequest" />
+		<TABLE Name="bcstkissue2" />		
+		<TABLE Name="bcpaybill" />
+		<TABLE Name="bcstatement" />
+		<TABLE Name="bcpaymenttemp" />
+	</BILLSTATUS_TABLE>
+		
+</CONFIG>
+
+
+
+
+

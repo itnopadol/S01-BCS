@@ -1,0 +1,37 @@
+﻿Uninstalling assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog
+Removing EventLog source BCWinService.
+Service BCWinService is being removed from the system...
+Service BCWinService was successfully removed from the system.
+Installing assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog
+Installing service BCWinService...
+Service BCWinService has been successfully installed.
+Creating EventLog source BCWinService in log Application...
+Committing assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog
+Uninstalling assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog
+Removing EventLog source BCWinService.
+Attempt to stop service BCWinService.
+Service BCWinService is being removed from the system...
+Service BCWinService was successfully removed from the system.
+Installing assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog
+Installing service BCWinService...
+Service BCWinService has been successfully installed.
+Creating EventLog source BCWinService in log Application...
+Committing assembly 'c:\bcs\bcswinservice\bcswinservice.exe'.
+Affected parameters are:
+   assemblypath = c:\bcs\bcswinservice\bcswinservice.exe
+   logfile = c:\bcs\bcswinservice\bcswinservice.InstallLog

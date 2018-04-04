@@ -1,0 +1,86 @@
+;รายชื่อตัวแปรที่ใช้ได้กับใบสั่งขายสินค้า
+[MAIN]
+COMPANY_NAME=ชื่อบริษัท
+COMPANY_ADDRESS=ที่อยู่บริษัท
+COMPANY_TEL=หมายเลขโทรศัพท์
+COMPANY_TAXNO=หมายเลขประจำตัวผู้เสียภาษี
+-------------------=---------------------------
+TODAY=วันที่พิมพ์ฟอร์ม
+USER_ID=ผู้ที่พิมพ์
+PAGE_1=หน้าที่พิมพ์ (หน้าที่ 1/2)
+PAGE_2=ระบุต่อไป (มีต่อหน้า 2)
+MAX_ITEM=จำนวนบรรทัด
+NET_AMOUNT_WORD=จำนวนเงินที่เป็นตัวหนังสือภาษาไทย
+NET_AMOUNT_WORD_ENG=จำนวนเงินที่เป็นตัวหนังสือภาษาอังกฤษ
+DOCDATE_THAI=วันที่เป็นภาษาไทย (12 เมษายน 2544)
+DOCDATE_ENG=วันที่เป็นภาษาอังกฤษ (12 Jan 2001)
+-------------------=---------------------------
+AR_CODE=รหัสลูกค้า
+AR_NAME_1=ชื่อลูกค้า เป็นชื่อที่ 1
+AR_NAME_2=ชื่อลูกค้า เป็นชื่อที่ 2
+AR_ADDRESS = ที่อยู่ออกบิลของลูกค้า
+AR_WORK_ADDRESS=ที่อยู่ปัจจุบัน
+AR_TEL=หมายเลขโทรศัพท์
+AR_FAX=Fax
+AR_DELIVERY_ADDRESS=สถานที่ขนส่ง
+AR_DELIVERY_TEL=หมายเลขโทรศัพท์สถานที่ขนส่ง
+CONTACT_CODE=รหัสผู้ติดต่อ
+CONTACT_NAME=ชื่อผู้ติดต่อ
+-------------------=---------------------------
+DocNo		=	เลขที่เอกสาร
+DocDate		=	วันที่เอกสาร
+DepartCode	=	รหัสแผนก
+CreditDay	=	เครดิตเทอม
+DueDate		=	วันถึงกำหนดชำระ
+SaleCode		=	รหัสพนักงานขาย 
+TaxRate		=	อัตราภาษี
+IsConfirm		=	ตรวจสอบเอกสาร 0=ยังไม่ตรวจ 1=ตรวจแล้ว
+MyDescription	=	หมายเหตุบิล
+SumOfItemAmount	=	จำนวนเงิน (= ยอดรวมของรายวันย่อย)
+DiscountWord	=	ส่วนลดการค้า ตามที่ Key เป็น % 
+DiscountAmount	=	ส่วนลดที่เป็นจำนวนเงิน
+AfterDiscount	=	ยอดเงินหลังส่วนสดสำหรับคำนวนภาษี 
+BeforeTaxAmount	=	ยอดเงินสุทธิ 
+TaxAmount	=	ยอดภาษีมูลค่าอัตราเพิ่ม
+TotalAmount	=	ยอดรวมภาษี
+ExceptTaxAmount	=	ยอดยกเว้นภาษี
+NetAmount	=	ยอดเงินสุทธิของบิล 
+CurrencyCode	=	รหัสสกุลเงิน
+ExchangeRate	=	อัตราแลกเปลี่ยนเงินตรา
+AllocateCode	=	รหัสการจัดสรร
+ProjectCode	=	รหัสโครงการ
+@		=	ใส่ @ หน้าตัวแปรจะแสดงสัญลักษณ์ของสกุลเงินด้วย(10,000$)
+.
+[SUB]
+ItemCode		=	รหัสสินค้า
+ItemName	=	ชื่อสินค้า
+DocDate		=	วันที่เอกสาร  (จากหัวเอกสาร)
+ArCode		=	รหัสลูกหนี้
+DepartCode	=	รหัสแผนก (จากหัวเอกสาร)
+SaleCode		=	รหัสพนักงานขาย(จากหัวเอกสาร)
+WHCode		=	รหัสคลังสินค้า
+ShelfCode	=	รหัสที่เก็บ
+Qty		=	จำนวนสินค้า
+RemainQty	=	ยอดคงเหลือหลังตัด
+Price		=	ราคา/หน่วย
+DiscountWord	=	ส่วนลด %
+DiscountAmount	=	จำนวนเงินที่ลด
+Amount		=	จำนวนเงิน
+NetAmount	=	ยอดถอดภาษีกรณีที่เป็นรวมใน
+HomeAmount	=	NetAmount * ExchangeRate
+UnitCode		=	รหัสหน่วยนับ
+UnitNAME		=	ชื่อหน่วยนับ
+OppositeUnit	=	หน่วยนับขนาน
+OppositeUnitName	=	ชื่อหน่วยนับขนาน
+OppositeQty	=	จำนวนที่ 2
+CategoryCode	=	รหัสหมวดของสินค้า
+GroupCode	=	รหัสกลุ่มสินค้า
+BrandCode	=	รหัสยี่ห้อสินค้า
+TypeCode	=	รหัสชนิดสินค้า
+FormatCode	=	รหัสรูปแบบสินค้า
+BarCode		=	รหัสบาร์โค้ด
+ITEMWeight	=	น้ำหนักของสินค้า
+ItemSize		=	ขนาดของสินค้า
+@		=	ใส่ @ หน้าตัวแปรจะแสดงสัญลักษณ์ของสกุลเงินด้วย(10,000$)
+BCITEM.BRANDCODE = ดึงข้อมูลจาก Table สินค้าโดยตรง(เป็นรหัส)
+BCITEM.BRANDCODE*BCITEMBRAND=ดึงข้อมูลจาก Table สินค้าโดยตรง(เป็นชื่อของ Master นั้นๆ โดย BCITEMBRAND = Table ของ Master)

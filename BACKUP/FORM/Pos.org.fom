@@ -1,0 +1,89 @@
+CONDENSED=OFF
+;JOURNAL_COL=40
+FONT_SIZE=12
+;THAI_CODE_PAGE
+PAGE_WIDTH=40
+LINE=40
+A,RIGHT,(พิมพ์ทดแทน)
+A,NewLine
+H,CENTER,ใบกำกับภาษีอย่างย่อ
+H,NewLine
+H,1,เลขที่: &DocNo&
+H,RIGHT,วันที่: &DOCDATE&
+H,NewLine
+H,CENTER,&COMPANY_NAME&
+H,NewLine
+H,CENTER,&COMPANY_ADDRESS&
+H,NewLine
+H,CENTER,เลขประจำตัวผู้เสียภาษี :&COMPANY_TAXNO&
+H,NewLine
+H,1,เลขที่เครื่อง :&MACHINECODE&
+H,RIGHT,เวลา : &TIME&
+;H,1,รหัสสมาชิก : &AR_CODE{10}& : &AR_NAME{30}&
+H,NewLine
+H,1,แคชเชียร์  &CASHIER_NAME&
+H,NewLine
+
+DH,1,Qty,RIGHT,3
+DH,N,รายการสินค้า,CENTER,19
+DH,N,จำนวนเงิน,RIGHT,9
+DH,N,V,RIGHT,1
+DH,N,P,RIGHT,1
+DH,NewLine
+
+
+;DL,N,SHORT_NAME,Left,19
+DL,1,Qty,RIGHT,3,###
+DL,N,Amount,LEFT,9,##,###.##
+DL,N,VATTYPE,RIGHT,1
+DL,N,PROMOSTATUS,RIGHT,1
+DL,NewLine
+
+
+N,1,มูลค่าสินค้ารวมภาษีมูลค่าเพิ่ม :
+N,RIGHT,&NetDebtAmount&
+N,NewLine
+N,1,มูลค่าสินค้ายกเว้นภาษี 
+N,RIGHT,&EXCEPTTAXAMOUNT&
+N,NewLine
+N,1,ภาษีมูลค่าเพิ่ม  &TaxRate& %
+N,RIGHT,&TaxAmount&
+N,NewLine
+
+P,1,คุปอง :
+P,RIGHT,&COUPONGAMOUNT&
+P,NewLine
+O,1,เงินสดรับ :
+O,RIGHT,&SUMCASHAMOUNT&
+O,NewLine
+Q,1,บัตรเครดิต :&CREDITTYPENAME&
+Q,RIGHT,&CREDITAMOUNT&
+Q,NewLine
+Q,1,เลขที่บัตร :&CREDITNO&
+Q,NewLine
+F,RIGHT,เงินทอน : &EXCHANGE&
+F,NewLine
+
+;F,CENTER,จำนวนรายการสินค้า : &ITEM_COUNT&
+;F,NewLine
+F,CENTER,จำนวนสินค้า :&SUM_QTY&
+F,NewLine
+
+F,1,ขอบคุณที่มาใช้บริการที่ร้าน โปรดเก็บใบเสร็จนี้ไว้
+F,NewLine
+F,1,กรณีต้องการเปลี่ยน-คืน ติดต่อภายใน 14 วัน
+F,NewLine
+F,1,พร้อมใบเสร็จนี้
+F,NewLine
+F,LEFT,สอบถาม โทร.&COMPANY_TEL& 8.00-20.00น. จ.-ส.
+F,NewLine
+F,Left,--------------------------------------
+F,NewLine
+L,center,&ABBREMARK&
+L,NewLine
+M,CENTER,.
+M,NewLine
+M,CENTER,.
+M,CUT_PAPER
+M,NewLine
+

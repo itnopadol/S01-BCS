@@ -1,0 +1,540 @@
+﻿<?xml version="1.0"?>
+<logbookconfig>
+
+<config name="ItemTransConfig" parameter="code">
+	<exportsql>
+		select code,name1,name2,shortname,
+		stocktype,costtype,unittype,i.activestatus,excepttax,accgroupcode,mydescription=isnull(mydescription,' '),stockmin,stockmax,orderpoint,
+		defstkunitcode,defbuyunitcode,defsaleunitcode,groupcode,typecode,categorycode,formatcode,
+		defbuywhcode,defbuyshelf,defsalewhcode,defsaleshelf,deffgwhcode,deffgshelf,defrawwhcode,defrawshelf,defbadwhcode,defbadshelf,
+		rate,p.unitcode,rate1,rate2,running,runner,barcode,barcodename,b.unitcode,i.creatorcode,i.createdatetime,i.lasteditorcode,i.lasteditdatet,workdate=getdate()
+		from bcitem i left join bcstkpacking p on i.code = p.itemcode
+		left join bcbarcodemaster b on i.code = b.itemcode
+		where code ='##PARAMETER##'
+	</exportsql>
+</config>
+
+
+<config name="ArTransConfig" parameter="code">
+	<exportsql>
+		select code,name1,billaddress,workaddress,persontype,memberid,begindate,expiredate,accountcode,
+		taxno,ismaketrans,idcardno,activestatus,telephone,fax,emailaddress,homepage,salecode,
+		typecode,groupcode,pricelevel,taxtype,debtlimit1,debtlimitbal,debtamount,billcredit,transportcredit,
+		creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+		from bcar
+		where code='##PARAMETER##'
+	</exportsql>
+</config>
+
+
+<config name="ApTransConfig" parameter="code">
+	<exportsql>
+		select code,name1,address,telephone,fax,idcardno,accountcode,taxno,activestatus,
+		persontype,typecode,groupcode,creditday,creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+		from bcap 
+		where code ='##PARAMETER##'
+	</exportsql>
+</config>
+	
+<config name="POConfig" parameter="docno">
+	<exportsql>
+		select docno,docdate,taxtype,departcode,apcode,projectcode,creditday,leaddate,iscancel,
+		isconditionsend,ordertoarcode,mydescription=isnull(mydescription,' '),contactcode,
+		sumofitemamount,discountword,discountamount,afterdiscount,beforetaxamount,taxamount,totalamount,netamount,
+		creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+		from bcpurchaseorder
+		where docno ='##PARAMETER##'
+	</exportsql>
+	<exportsql>
+		-- Detail
+		select docno,itemcode,itemname,whcode,shelfcode,unitcode,qty,remainqty,price,discountword,discountamount,amount,netamount,
+		groupcode,typecode,categorycode,formatcode,brandcode,colorcode,packingrate1,packingrate2,linenumber,
+		creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+		from bcpurchaseordersub
+		where docno ='##PARAMETER##'
+	</exportsql>
+</config>
+
+<config name="CancelPoConfig" parameter="docno">
+	<exportsql>
+		select a.docno,a.docdate,a.totalamount,remark=isnull(remark,' '),
+		b.apcode,b.pono,itemcode,mydescription=isnull(mydescription,' '),unitcode,price,qty,voidqty,b.amount,b.voidamount,linenumber,cancelall,reflinenumber,
+		groupcode,typecode,categorycode,formatcode,brandcode,packingrate1,packingrate2,
+		a.creatorcode,a.createdatetime,a.lasteditorcode,a.lasteditdatet,a.cancelcode,a.canceldatetime,workdate=getdate()
+		from bcpovoid a inner join bcpovoidsub b on a.docno = b.docno
+		where a.docno ='##PARAMETER##'
+	</exportsql>
+</config>
+
+
+<config name="GoodsReceiveConfig" parameter="docno">
+	<exportsql>
+		select docno,docdate,apcode,apname=(select name1 from bcap where bcap.code = ApCode),
+		billtype,taxtype,DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),SumOfItemAmount,DiscountWord,DiscountAmount,
+		AfterDiscount,BeforeTaxAmount,TaxAmount,TotalAmount,PettyCashAmount,SumCashAmount,SumChqAmount,SumBankAmount,SumOfDeposit1,SumOfDeposit2,
+		NetDebtAmount,BillBalance,paybillamount,refdocno,GRBillStatus,GRIRBillStatus, 
+		IsCancel, IsCreditNote, IsDebitNote, AllocateCode, ProjectCode,
+		printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+		from bcapinvoice
+		where docno ='##PARAMETER##' and  GRIRBillStatus = 1
+	</exportsql>
+	<exportsql>
+		select docno,itemcode,itemname,unitcode,whcode,shelfcode,cnqty,grremainqty,qty,price,
+		discountword,discountamount,amount,NetAmount,BalanceAmount,
+		PORefNo,IRRefNo,StockType,LineNumber,
+		allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+		creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+		from BCAPINVOICESUB
+		where docno ='##PARAMETER##' order by LineNumber
+	</exportsql>
+</config>
+
+<config name="InvoiceReceiveConfig" parameter="docno">
+	<exportsql>
+		select docno,docdate,apcode,apname=(select name1 from bcap where bcap.code = ApCode),
+		billtype,taxtype,DepartCode,CreditDay,MyDescription=isnull(MyDescription,' '),SumOfItemAmount,DiscountWord,DiscountAmount,
+		AfterDiscount,BeforeTaxAmount,TaxAmount,TotalAmount,PettyCashAmount,SumCashAmount,SumChqAmount,SumBankAmount,SumOfDeposit1,SumOfDeposit2,
+		NetDebtAmount,BillBalance,paybillamount,refdocno,GRBillStatus,GRIRBillStatus, 
+		IsCancel, IsCreditNote, IsDebitNote, AllocateCode, ProjectCode,
+		printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+		from bcapinvoice
+		where docno ='##PARAMETER##'  and GRIRBillStatus = 2
+	</exportsql>
+	<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,cnqty,qty,price,
+	discountword,discountamount,amount,NetAmount,BalanceAmount,
+	grrefno,PORefNo,StockType,LineNumber,
+	allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCIRSUB 
+	where docno ='##PARAMETER##' -- and docno in (select docno from bcapinvoice where bcapinvoice.docno = docno and GRIRBillStatus = 2)
+	order by LineNumber
+	</exportsql>
+</config>
+
+
+<config name="POStkReturnConfig" parameter="docno">
+	<exportsql>
+	select DocNo,DocDate,taxtype,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	billtype,causetype,causecode,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	NetDebtAmount,BillBalance,returnmoney,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCStkRefund 
+	where docno ='##PARAMETER##'  and billtype = 2
+	</exportsql>
+	<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,discqty,tempqty,billqty,price,
+	discountword,discountamount,amount,NetAmount,LineNumber,
+	invoiceno,allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkRefundsub 
+	where docno ='##PARAMETER##' 
+	order by linenumber
+	</exportsql>
+</config>
+	
+
+<config name="PORefundConfig" parameter="docno">
+	<exportsql>
+	select docno,DocDate,TaxNo,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	billtype,causetype,causecode,taxtype,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	NetDebtAmount,BillBalance,returnmoney,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCStkRefund
+	where BillType = 1 and docno ='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="PurchaseConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,apcode,apname=(select name1 from bcap where bcap.code = ApCode),
+	billtype,taxtype,DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),SumOfItemAmount,DiscountWord,DiscountAmount,
+	AfterDiscount,BeforeTaxAmount,TaxAmount,TotalAmount,PettyCashAmount,SumCashAmount,SumChqAmount,SumBankAmount,SumOfDeposit1,SumOfDeposit2,
+	NetDebtAmount,BillBalance,paybillamount,refdocno,GRBillStatus,GRIRBillStatus, 
+	IsCancel, IsCreditNote, IsDebitNote, AllocateCode, ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCAPINVOICE
+	where docno ='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,cnqty,grremainqty,qty,price,
+	discountword,discountamount,amount,NetAmount,BalanceAmount,
+	PORefNo,IRRefNo,StockType,LineNumber,
+	allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCAPINVOICESUB
+	where docno ='##PARAMETER##' 
+	order by LineNumber
+</exportsql>
+</config>
+
+
+<config name="POCreditNoteConfig" parameter="docno">
+<exportsql>
+	select docno,DocDate,TaxNo,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	billtype,causetype,causecode,taxtype,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	NetDebtAmount,BillBalance,returnmoney,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCStkRefund
+	where BillType = 0 and docno ='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,discqty,tempqty,billqty,price,
+	discountword,discountamount,amount,NetAmount,LineNumber,
+	invoiceno,allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkRefundsub 
+	where docno ='##PARAMETER##' 
+	order by linenumber
+</exportsql>
+</config>
+
+<config name="InvDebitNote2Config" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,taxtype,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	causetype,causecode,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	NetDebtAmount,BillBalance,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCDebitNote2 
+	where docno ='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,discqty,tempqty,billqty,price,
+	discountword,discountamount,amount,NetAmount,LineNumber,
+	invoiceno,allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCDebitNotesub2 
+	where docno ='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+<config name="APDepositConfig" parameter="docno">
+<exportsql>
+	select docno,DocDate,TaxNo,TaxDate,TaxType,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),BeforeTaxAmount,TaxAmount,TotalAmount,NetAmount,BillBalance,
+	PettyCashAmount,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsCancel,AllocateCode,ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCApDeposit where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="APEarnestSpecialConfig" parameter="docno">
+<exportsql>
+	select docno,DocDate,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),BeforeTaxAmount,TotalAmount,NetAmount,BillBalance,
+	PettyCashAmount,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsCancel,AllocateCode,ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCApDepositspecial
+	where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="APEarnestSpecialReturnConfig" parameter="docno">
+<exportsql>
+	select docno,DocDate,ApCode,apname=(select name1 from bcap where bcap.code = ApCode),
+	DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),BeforeTaxAmount,TotalAmount,NetAmount,BillBalance,
+	PettyCashAmount,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsCancel,AllocateCode,ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCAPReturnDepSpecial 
+	where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="APWeightConfig" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,RefDocNo,ExpDescription,WeightBy,WeightCostType,WeightAmount,FromPo,ToPO,PrintCount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCWeightCost where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="SaleOrderConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,ArCode,arname=(select name1 from bcar where bcar.code = arcode),
+	billtype,BillStatus,SOStatus,taxtype,DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),
+	SumOfItemAmount,DiscountWord,DiscountAmount,AfterDiscount,BeforeTaxAmount,TaxAmount,TotalAmount,
+	refdocno,IsCancel,AllocateCode,ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCSaleOrder where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,qty,remainqty,price,
+	discountword,discountamount,amount,NetAmount,PORefNo,LineNumber,
+	allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcsaleordersub where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="ARDepositConfig" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,TaxNo,TaxDate,TaxType,ArCode,arname=(select name1 from bcar where bcar.code = arcode),
+	DepartCode,AllocateCode,ProjectCode,RefNo,CreditDay,MyDescription=isnull(mydescription,' '),SaleCode,IsCancel,IsConfirm,
+	BeforeTaxAmount,TaxAmount,TotalAmount,NetAmount,BillBalance,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsReturnMoney,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCARDeposit where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="ARDepositSpecialConfig" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,ArCode,arname=(select name1 from bcar where bcar.code = arcode),
+	DepartCode,AllocateCode,ProjectCode,RefNo,CreditDay,MyDescription=isnull(mydescription,' '),SaleCode,IsCancel,IsConfirm,
+	BeforeTaxAmount,TotalAmount,NetAmount,BillBalance,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsReturnMoney,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCARDepositSpecial  where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+<config name="ARReturnDepositSpecialConfig" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,ArCode,arname=(select name1 from bcar where bcar.code = arcode),
+	DepartCode,AllocateCode,ProjectCode,CreditDay,MyDescription=isnull(mydescription,' '),SaleCode,IsCancel,IsConfirm,
+	BeforeTaxAmount,TotalAmount,NetAmount,BillBalance,SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,IsReturnMoney,
+	EarnestNo,EarnestAmount,EarnestBalance,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCReturnDepSpecial   where docno='##PARAMETER##' 
+</exportsql>
+</config>
+
+
+<config name="BillingTransConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,ArCode,ARNAME,billtype,taxtype,DepartCode,CreditDay,MyDescription=isnull(mydescription,' '),
+	SumOfItemAmount,DiscountWord,DiscountAmount,AfterDiscount,BeforeTaxAmount,TaxAmount,TotalAmount,
+	SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,SumOfDeposit1,SumOfDeposit2,NetDebtAmount,BillBalance,paybillamount,
+	refdocno,IsCancel,IsCreditNote,IsDebitNote,AllocateCode,ProjectCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from bcarinvoice    where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,cnqty,qty,price,
+	discountword,discountamount,amount,NetAmount,BalanceAmount,
+	PORefNo,StockType,LineNumber,
+	allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcarinvoicesub    where docno='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+
+<config name="InvCreditNoteConfig" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,taxtype,ArCode,arname=(select name1 from bcar where bcar.code = ArCode),
+	causetype,causecode,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	SumCashAmount,SumChqAmount,SumCreditAmount,SumBankAmount,
+	NetDebtAmount,BillBalance,returnmoney,returnstatus,returncash,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCCreditNote
+	where docno='##PARAMETER##'  
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,discqty,tempqty,billqty,price,
+	discountword,discountamount,amount,NetAmount,LineNumber,
+	invoiceno,allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCCreditNotesub 
+	where docno='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+<config name="InvDebitNote1Config" parameter="docno">
+<exportsql>
+	select DocNo,DocDate,taxtype,ArCode,arname=(select name1 from bcar where bcar.code = ArCode),
+	causetype,causecode,DepartCode,MyDescription=isnull(mydescription,' '),SumOfItemAmount,SumOldAmount,SumTrueAmount,SumofDiffAmount,
+	DiscountWord,DiscountAmount,SumofBeforeTax,SumOfTaxAmount,SumOfTotalTax,
+	NetDebtAmount,BillBalance,IsCancel,AllocateCode,ProjectCode,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,cancelcode,canceldatetime,workdate=getdate()
+	from BCDebitNote1 
+	where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,itemname,unitcode,whcode,shelfcode,discqty,tempqty,billqty,price,
+	discountword,discountamount,amount,NetAmount,LineNumber,
+	invoiceno,allocatecode,ProjectCode,GroupCode,TypeCode,CategoryCode,FormatCode,BrandCode,Colorcode,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCDebitNotesub1
+	where docno='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+<config name="APStatementConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,apcode,apname=(select name1 from bcap where bcap.code = ApCode),
+	billstatus,creditday,departcode,mydescription=isnull(mydescription,' '),
+	sumofinvoice,sumofdebitnote,sumofcreditnote,beforetaxamount,taxamount,totalamount,iscancel,isconfirm,printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstatement
+	where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,invoiceno,invoicedate,invbalance,payamount,paybalance,mydescription=isnull(mydescription,' '),billtype,iscancel,linenumber,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstatementsub
+	where docno='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+<config name="APPaymentConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,apcode,apname=(select name1 from bcap where bcap.code = ApCode),
+	allocatecode,projectcode,departcode,mydescription=isnull(mydescription,' '),
+	sumofinvoice,sumofdebitnote,sumofcreditnote,beforetaxamount,taxamount,totalamount,discountamount,netamount,
+	sumcashamount,sumchqamount,sumbankamount,sumofdeposit1,sumofdeposit2,iscancel,isconfirm,printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcpayment
+	where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,invoiceno,invoicedate,invbalance,payamount,mydescription=isnull(mydescription,' '),billtype,paybillno,linenumber,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcpaymentsub
+	where docno='##PARAMETER##'  order by linenumber
+</exportsql>
+</config>
+
+
+<config name="ARPaybillConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,arcode,arname=(select name1 from bcar where bcar.code = ArCode),
+	billstatus,creditday,departcode,mydescription=isnull(mydescription,' '),
+	sumofinvoice,sumofdebitnote,sumofcreditnote,beforetaxamount,taxamount,totalamount,iscancel,isconfirm,printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcpaybill
+	where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,invoiceno,invoicedate,invbalance,payamount,paybalance,mydescription=isnull(mydescription,' '),billtype,iscancel,linenumber,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcpaybillsub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+<config name="ARReceipt1Config" parameter="docno">
+<exportsql>
+	select docno,docdate,arcode,arname=(select name1 from bcar where bcar.code = ArCode),
+	allocatecode,projectcode,departcode,mydescription=isnull(mydescription,' '),
+	sumofinvoice,sumofdebitnote,sumofcreditnote,beforetaxamount,taxamount,totalamount,discountamount,netamount,
+	sumcashamount,sumchqamount,sumbankamount,iscancel,isconfirm,printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCReceipt1
+	where docno='##PARAMETER##' 
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,invoiceno,invoicedate,invbalance,payamount,mydescription=isnull(mydescription,' '),billtype,refno,linenumber,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCReceiptsub1
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+
+<config name="ICStkBalanceConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,mydescription=isnull(mydescription,' '),departcode,sumofamount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstkbalance
+	where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,whcode,shelfcode,unitcode,qty,cost,amount,packingrate1,packingrate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstkbalancesub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+<config name="ICStkIssueConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,departcode,allocatecode,projectcode,issuetype,dayofuse,personcode,mydescription=isnull(mydescription,' '),printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkIssue
+	where docno='##PARAMETER##'
+</exportsql>
+</config>
+
+<config name="ICStkTransConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,departcode,mydescription=isnull(mydescription,' '),sumofqty,printcount,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkTransfer
+		where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,fromwh,fromshelf,towh,toshelf,unitcode,qty,refno,linenumber,reflinenumber,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkTransfSub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+<config name="ICStkAdjustConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,inspectno,adjusttype,mydescription=isnull(mydescription,' '),sumamount,sumamount2,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstkadjust
+	where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,inspectno,inspectrow,adjmark,itemcode,whcode,shelfcode,unitcode,qty,adjcost,amount,linenumber,packingrate1,packingrate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from bcstkadjustsub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+<config name="ICStkIssueRetConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,IssueRefNo,mydescription=isnull(mydescription,' '),departcode,ProjectCode,AllocateCode,PersonCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkIssueRet
+	where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,unitcode,qty,price,amount,whcode,shelfcode,linenumber,reflinenumber,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCStkIssRetSub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+<config name="ICFinishGoodConfig" parameter="docno">
+<exportsql>
+	select docno,docdate,mydescription=isnull(mydescription,' '),departcode,ProjectCode,AllocateCode,PersonCode,
+	printcount,creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCFinishGoods
+	where docno='##PARAMETER##'
+</exportsql>
+<exportsql>
+	-- Detail
+	select docno,itemcode,unitcode,qty,cost,amount,whcode,shelfcode,linenumber,PackingRate1,PackingRate2,
+	creatorcode,createdatetime,lasteditorcode,lasteditdatet,workdate=getdate()
+	from BCFinishGoodssub
+	where docno='##PARAMETER##' order by linenumber
+</exportsql>
+</config>
+
+</logbookconfig>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<!-- only document header only -->
+<interfaceobjconfig>
+
+<data id="SCGCoupon" display="SCGCoupon" tb="BCACouponmaster" pk="couponcode" addlog_col="couponcode" script="coupon.sql" type="document" >
+<delete_relate>
+DELETE FROM BCACouponmaster where ##WHERE_CONDITION##
+</delete_relate>
+<cancel_relate></cancel_relate>
+<export_relate>
+<export no="1" tb="BCACouponmaster" sql="select * from BCACouponmaster where couponcodecode='##DOCNO##'" />
+</export_relate>
+</data>
+
+
+</interfaceobjconfig>

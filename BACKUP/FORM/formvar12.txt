@@ -1,0 +1,57 @@
+;รายชื่อตัวแปรที่ใช้ได้กับ ใบโอนสินค้า
+[MAIN]
+COMPANY_NAME=ชื่อบริษัท
+COMPANY_ADDRESS=ที่อยู่บริษัท
+COMPANY_TEL=หมายเลขโทรศัพท์
+COMPANY_TAXNO=หมายเลขประจำตัวผู้เสียภาษี
+-------------------=---------------------------
+TODAY=วันที่พิมพ์ฟอร์ม
+USER_ID=ผู้ที่พิมพ์
+PAGE_1=หน้าที่พิมพ์ (หน้าที่ 1/2)
+PAGE_2=ระบุต่อไป (มีต่อหน้า 2)
+MAX_ITEM=จำนวนบรรทัด
+NET_AMOUNT_WORD=จำนวนเงินที่เป็นตัวหนังสือภาษาไทย
+NET_AMOUNT_WORD_ENG=จำนวนเงินที่เป็นตัวหนังสือภาษาอังกฤษ
+DOCDATE_THAI=วันที่เป็นภาษาไทย (12 เมษายน 2544)
+DOCDATE_ENG=วันที่เป็นภาษาอังกฤษ (12 Jan 2001)
+PRINT_TIME=เวลาที่พิมพ์
+-------------------=---------------------------
+DocNo	=	เลขที่เอกสาร
+DocDate	=	วันที่เอกสาร
+DepartCode	=	รหัสแผนก
+MyDescription	=	หมายเหตุบิล
+SumOfQty=จำนวนที่โอน
+.
+[SUB]
+LineNumber=	ลำดับที่
+ItemCode	=	รหัสสินค้า
+ItemName=	ชื่อสินค้า
+DocDate	=	วันที่เอกสาร  (จากหัวเอกสาร)
+FromWH	=โอนจากคลัง
+FromShelf=	โอนจากที่เก็บ
+ToWH	=โอนเข้าคลัง
+ToShelf	=โอนเข้าที่เก็บ
+Qty	=จำนวนสินค้า
+Price	=ราคาที่โอน
+SumOfCost	=ต้นทุนทั้งสิ้น  ไม่ใช่ต้นทุนต่อหน่วย
+Amount	=จำนวนเงิน
+RefNo	=เลขที่ใบขอโอน
+UnitCode	=	รหัสหน่วยนับ
+UnitNAME	=	ชื่อหน่วยนับ
+OppositeUnit	=	หน่วยนับขนาน
+OppositeUnitName	=	ชื่อหน่วยนับขนาน
+OppositeQty	=	จำนวนที่ 2
+CategoryCode	=	รหัสหมวดของสินค้า
+GroupCode	=	รหัสกลุ่มสินค้า
+BrandCode	=	รหัสยี่ห้อสินค้า
+TypeCode	=	รหัสชนิดสินค้า
+FormatCode	=	รหัสรูปแบบสินค้า
+BarCode	=	รหัสบาร์โค้ด
+FWHNAME	=	ชื่อคลังโอนออก
+FSHELFNAME	=	ชื่อที่เก็บออก
+TWHNAME	=	ชื่อคลังโอนเข้า
+TSHELFNAME	=	ชื่อที่เก็บเข้า
+ITEMWeight=น้ำหนักของสินค้า
+ItemSize=ขนาดของสินค้า
+BCITEM.BRANDCODE = ดึงข้อมูลจาก Table สินค้าโดยตรง(เป็นรหัส)
+BCITEM.BRANDCODE*BCITEMBRAND=ดึงข้อมูลจาก Table สินค้าโดยตรง(เป็นชื่อของ Master นั้นๆ โดย BCITEMBRAND = Table ของ Master)

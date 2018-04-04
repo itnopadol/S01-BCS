@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Qx Application Co.,Ltd. -->
+<config>
+	<sqllog value="yes" /> <!-- write sql statment-->
+ 	<clientconnect_config value="C:\SCGXMLCONFIG\ClientConnect.xml" />
+	<script_name value="SCGCouponDownload.sql" />
+    <dev_mode value="" />
+</config>

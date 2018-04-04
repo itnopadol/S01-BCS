@@ -1,0 +1,11951 @@
+--dbversion=273
+--progstring=bc5acc
+--***********************************
+--Comments: Last update Jeab 2005-09-12
+
+DROP TABLE ReportStatus;
+DROP TABLE ProcessItemReport;
+DROP TABLE ProcessStock;
+DROP TABLE ProcessStatus;
+DROP TABLE ProcessStatus2;
+DROP TABLE ProcessStatus3;
+DROP TABLE FunctionStock;
+DROP TABLE FunctionStockResult;
+DROP TABLE ProcessDoc;
+DROP TABLE processconnection;
+
+create table BCAutoProcHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20)  NOT NULL,
+	MyType smallint default 0, -- ตาม MyType ของรายการย่อย
+	Status smallint default 0, -- 1=Processing
+	ItemCode	VARCHAR(25)
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCAutoProcHist2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20)  NOT NULL,
+	Status smallint default 0, -- 1=Processing
+	PersonType smallint default 0, -- 0=ar 1=ap
+	PersonCode	VARCHAR(20)
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCDevReportList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ReportName	VARCHAR(50)  NOT NULL,
+	ReportFile	VARCHAR(50)
+    PRIMARY KEY(ReportName)
+);
+
+create table BCUserLogBook -- การทำงาน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	WorkMode SMALLINT DEFAULT 0, -- 0=ทำงานตามเมนู 1=ทำงานอื่นๆ
+	WorkType SMALLINT DEFAULT 0, -- 0=เพิ่มข้อมูล 1=แก้ไขข้อมูล 3=ลบข้อมูล 4=พิมพ์รายงาน 5=อื่นๆ
+	MenuID	FLOAT DEFAULT 0.0, -- เมนูที่ใช้งาน
+	WorkDate	DATETIME NOT NULL, -- วันที่ทำงาน
+	ComputerName	VARCHAR(50), -- ชื่อเครื่อง COM ที่ใช้งาน
+	DocDate	DATETIME , --วันที่ของเอกสาร
+	DocNo	VARCHAR(20), -- เอกสารที่ใช้
+	UserID	VARCHAR(20),
+	ShortWord VARCHAR(50),
+	DetailCount	SMALLINT DEFAULT 0  -- จำนวนรายการย่อยในบิล
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCBuyPriceCondit -- ใบเปรียบเทียบราคา
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	RefNo VARCHAR(20), -- เลขที่อ้างอิง
+	DocDate	DATETIME NOT NULL,
+	MyDescription	VARCHAR(1000),
+	BillStatus	SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	LastEditDateT	DATETIME
+    PRIMARY KEY(DocNo)
+);
+
+create table BCByPriceCondSub -- ใบเปรียบเทียบราคา รายการย่อย
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	MyDescription	VARCHAR(1000), -- หมายเหตุอื่นๆ
+	DepartCode	VARCHAR(10),
+	StkRequestNo	VARCHAR(20), -- เลขที่ใบเสนอซื้อ
+	SelectAP SMALLINT DEFAULT 0, -- 0=ไม่เลือก 1=เลือก
+	ItemCode	VARCHAR(25),
+	UnitCode	VARCHAR(10),
+	ApCode	VARCHAR(20),
+	CreatePoFlag	SMALLINT DEFAULT 0, -- 0=ปกติ 1=หมดแล้ว
+	Qty	FLOAT DEFAULT 0.0, -- ยอดทั้งหมด
+	BuyQty	FLOAT DEFAULT 0.0, -- ยอดที่จะซื้อ
+	BuyPrice FLOAT DEFAULT 0.0, --ราคาที่จะซื้อ
+	DiscountWord VARCHAR(30),	
+	CreditDay	SMALLINT DEFAULT 0, -- จำนวนวันเครดิตจ่ายเงิน
+	TrasportDay	SMALLINT DEFAULT 0, -- ส่งของภายใน
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	TransportCondit VARCHAR(255),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 MONEY DEFAULT 0.0,
+	PackingRate2 MONEY DEFAULT 0.0,
+	BehindIndex	SMALLINT DEFAULT 1 
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCSysTRFormat -- Table หลักของรูปแบบรายวัน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransKey	VARCHAR(255) NOT NULL,
+	MainTable VARCHAR(20), -- Table หลักของรายวันที่ใช้ในการบันทึกข้อมูล
+	JoinTable	VARCHAR(1000), -- Table ที่นำมา Jion กัน
+	FilterBy	VARCHAR(1000),
+	SortBy	VARCHAR(1000),
+	TransTitle	VARCHAR(1000),
+	FindRect	VARCHAR(50),
+	DocFormat	VARCHAR(50),
+	SlipFomName VARCHAR(50),
+	WTaxFomName	VARCHAR(50),
+	SearchStyle	SMALLINT default 0,
+	DisplayStyle	SMALLINT default 0,
+	IsSearchFirst SMALLINT default 0,
+	PrintFrmInText	SMALLINT DEFAULT 0,
+	PrintLimit		SMALLINT DEFAULT 1,
+	TaxFormat	VARCHAR(50) -- Format ของใบกำกับภาษี
+    PRIMARY KEY(TransKey)
+);
+
+create table BCSysTRFind -- Table ที่เก็บรูปแบบของหน้าจอค้นหา
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransKey	VARCHAR(255) NOT NULL,
+	FieldName	VARCHAR(1000), -- ชื่อ Field ที่ใช้
+	ColText	VARCHAR(255), -- ชื่อ Column
+	SortBy	VARCHAR(1000), -- ดรียงตาม
+	ColWidth	SMALLINT DEFAULT 0,
+	ColAlign	SMALLINT DEFAULT 0,
+	ColColor 	FLOAT DEFAULT 0, -- สีของ Column
+	LineNumber	SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_TRFSYS_TK	ON BCSysTRFind(TransKey);
+CREATE  INDEX IDX_TRFSYS_FN	ON BCSysTRFind(FieldName);
+
+create table BCSysTRFom -- Table Fom ที่ใช้ในหน้าจอนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransKey	VARCHAR(255) NOT NULL,
+	FormFileName	VARCHAR(255)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_TRFOSYS_TK	ON BCSysTRFom(TransKey);
+
+create table BCSysTRDocG	-- Table Fom ที่ใช้ในหน้าจอนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransKey	VARCHAR(255) NOT NULL,
+	GoupCode	VARCHAR(10) NOT NULL,
+	GoupDesc	VARCHAR(50),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	LineNumber	SMALLINT DEFAULT 0,
+	IsTaxGoup	SMALLINT DEFAULT 0  -- ใช้เป็น Running ของภาษี  Jeab 2003-06-24
+    PRIMARY KEY(TransKey,GoupCode,IsTaxGoup)
+);
+CREATE  INDEX IDX_TRDOCG_TK	ON BCSysTRDocG(TransKey);
+
+create table BCRoute
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCItemCategory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCMap
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	FileName	VARCHAR(255)
+    PRIMARY KEY(CODE)
+);
+
+create table BCARGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCARDebtGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	PaymentBy VARCHAR(20) NOT NULL, -- เก็บเงินที่
+	Name	VARCHAR(50) NOT NULL
+    PRIMARY KEY(CODE)
+);
+
+CREATE  INDEX IDX_ADBPAY ON BCARDebtGroup(PaymentBy);
+
+create table BCTransport --รหัสเส้นทางการขนส่ง
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCConditPay   --เงื่อนไขการชำระเงิน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	Name		VARCHAR(50), --ระยะเวลา
+	PrintCount SMALLINT DEFAULT 0 -- Count Print form -- A-20030923
+    PRIMARY KEY(CODE)
+);
+
+create table BCConditPaySub   --เงื่อนไขการชำระเงิน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	MasterCode	VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	LineNumber 	SMALLINT DEFAULT 0,
+	Remark VARCHAR(255),  -- ระยะเวลา
+	StartDay SMALLINT ,
+	StopDay SMALLINT ,
+	Condition VARCHAR(50),  -- ระยะเวลา
+	Priority SMALLINT DEFAULT 1
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_CONPS_MS ON BCConditPaySub(MasterCode);
+CREATE  INDEX IDX_CONPS_LINE ON BCConditPaySub(LineNumber);
+
+
+create table BCAllocate
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCAPBankBook -- เลขบัญขีธนาคารตามเจ้าหนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ApCode	VARCHAR(20)  NOT NULL,
+	BookNo	VARCHAR(30) NOT NULL,
+	Name	VARCHAR(50),
+	BankCode	VARCHAR(50),
+	BranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_APCODE ON BCAPBankBook(ApCode);
+CREATE  INDEX IDX_APBK_BCODE ON BCAPBankBook(BookNo);
+CREATE  INDEX IDX_APBK_APBNO ON BCAPBankBook(ApCode,BookNo);
+
+create table BCItemBrand
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCApGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCApType 
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCCustType 
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCDepartment
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCGeneric
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCItemGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCIssueType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCItemFormat
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCItemType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCShelf
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	WHCode	VARCHAR(10)-- คลังสินค้า	
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_BCSHCD on BCShelf(code);
+
+create table BCWarehouse
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	MapPicFileName	VARCHAR(255),
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index IDX_BCWHRWO on BCWarehouse(roworder);
+
+create table BCSaleArea
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCProject
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCSale
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	Address	VARCHAR(1000),
+	Telephone	VARCHAR(30),
+	PictureFileName	VARCHAR(50),
+	UserPassword VARCHAR(20), --
+	UserID VARCHAR(40), -- User ID
+	EmailAddress	VARCHAR(255), -- E-mail Address
+	POApprove	SMALLINT DEFAULT 0,
+	QuoApprove	SMALLINT DEFAULT 0,
+	SOApprove	SMALLINT DEFAULT 0,
+	InformPrice	SMALLINT DEFAULT 0, -- รับเมล์แจ้งการปรับราคา
+	ActiveStatus SMALLINT DEFAULT 1, -- 0 =  เลิกใช้งาน, 1 = ใช่งานอยู่
+	DepartCode	VARCHAR(10), -- แผนก 2003-01-20
+	ApproveCredit	SMALLINT DEFAULT 0, -- 0=อนุมัติวงเงินไม่ได้, 1=อนุมัติวงเงินได้
+	UserGroup VARCHAR(10)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCItemUnit
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	WaveFile	VARCHAR(50),
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+
+create table BCConfigurations
+(
+	CompanyName	VARCHAR(1000) NOT NULL,
+	CompanyNameEng VARCHAR(1000),
+	ManagerName VARCHAR(255),
+	ManagerNameEng VARCHAR(255),
+	Address	VARCHAR(1000),
+	AddressEng VARCHAR(1000),
+	Telephone	VARCHAR(255),
+	Fax	VARCHAR(255),
+	DeficitStatus SMALLINT	DEFAULT 1,
+	YearType	SMALLINT	DEFAULT 0,
+	TaxNumber	VARCHAR(30),
+	DefaultTaxType	SMALLINT	DEFAULT 0,
+	DefaultTaxRate	FLOAT DEFAULT 7.0,
+	DebtOverWarning	SMALLINT DEFAULT 0,
+	SODebtWarning	SMALLINT DEFAULT 0, -- 0=ไม่เตือน 1=เตือน ที่ใบสั่งขาย
+	BillDebtWarning	SMALLINT DEFAULT 0, -- 0=ไม่เตือน 1=เตือน ที่ใบขาย
+	StockStatus	SMALLINT DEFAULT 0,
+	PriceWarning	SMALLINT DEFAULT 0,
+	PriceCostRatio	VARCHAR(30),
+	ItemSetStatus	SMALLINT DEFAULT 0,
+	BeginQty	FLOAT DEFAULT 0.0,
+	QtyPoint	SMALLINT DEFAULT 2,
+	CostPoint	SMALLINT DEFAULT 4,
+	PricePoint	SMALLINT DEFAULT 2,
+	AmountPoint	SMALLINT DEFAULT 2,
+	StockRemain	SMALLINT DEFAULT 0,
+	DetailDiscount	SMALLINT DEFAULT 0,
+	BillDiscount	SMALLINT DEFAULT 0,
+	MultiCurrency	SMALLINT DEFAULT 0,
+	DiscPromotion	SMALLINT DEFAULT 0,
+	PricePromotion	SMALLINT DEFAULT 0,
+	PostGLStatus	SMALLINT DEFAULT 0,
+	GLBalanceCheck	SMALLINT DEFAULT 0,
+	BillConfirm	SMALLINT DEFAULT 0,
+	DefaultItemName	SMALLINT DEFAULT 0,
+	DefaultArName	SMALLINT DEFAULT 0,
+	DefaultApName	SMALLINT DEFAULT 0,
+	DefaultAccName	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,
+	ZeroTaxRate	SMALLINT DEFAULT 0,
+	UseLotStatus SMALLINT DEFAULT 0, -- ใช้ Lot หรือไม่ 0=ไม่ใช้ 1=ใช้
+	LotStatus	SMALLINT DEFAULT 0, -- 0=ตามโปรแกรม 1=กำหนดเอง
+	ServiceItem	SMALLINT DEFAULT 0, --- มีการขายสินค้าบริการ
+	SpecialItem SMALLINT DEFAULT 0, --- มีการขายสินค้าพิเศษ เช่น บุหรี่
+	SerialItem SMALLINT DEFAULT 0,  -- มีสินค้า Serial Item หรือไม่
+	UseExpCost	SMALLINT DEFAULT 0, -- 0=ไม่ใช้ต้นทุนแฝง 1=ใช้
+	DiscountMethod SMALLINT DEFAULT 0, -- 0=ลดยอดรวม 1=ลดราคา/หน่วย
+	BillDetailDesc SMALLINT DEFAULT 0, -- 0=แบบปกติ (V2) 1=ตั้งกลุ่มออกบิลได้
+	BuyItemSupplier SMALLINT DEFAULT 0, -- เลือกสินค้าตาม Supplier 0=ไม่ใช้ 1=ใช้ตาม Supplier
+	OppositeUnit	SMALLINT DEFAULT 0,
+	ChqCondition	VARCHAR(50),
+	PaybillRemark	VARCHAR(50),
+	InvoiceOnStart	SMALLINT DEFAULT 0,
+	ChqOnStart	SMALLINT DEFAULT 0,
+	StockLowOnStart	SMALLINT DEFAULT 0,
+	StkDeficitWarn	SMALLINT DEFAULT 0,
+	StkRemainOut	SMALLINT DEFAULT 0,
+	StkRemainIn	SMALLINT DEFAULT 0,
+	LogBookUse	SMALLINT DEFAULT 0,
+	Consignment	SMALLINT DEFAULT 0,
+	PrintSlip	SMALLINT DEFAULT 0,
+	PrintBill	SMALLINT DEFAULT 0,
+	AutoBillDocGroup SMALLINT DEFAULT 0, -- 1=Running เอกสารตามกลุ่มอัตโนมัติ
+	DefItemBillType	SMALLINT DEFAULT 0,
+	DefBuyBillType	SMALLINT DEFAULT 0,
+	DisplayPicture	SMALLINT DEFAULT 0,
+	CurrencySymbol	SMALLINT DEFAULT 0,
+	HCurrencySymbol	VARCHAR(2) DEFAULT '฿',
+	HCurrencyCode VARCHAR(10) DEFAULT 'HBA',
+	CashBalance FLOAT DEFAULT 0.0, -- ยอดเงินสดยกมา
+	PayBillDuplicate SMALLINT DEFAULT 0, -- 1=วางบิลซ้ำได้
+	DepartSeparate	 SMALLINT DEFAULT 0,
+	ProjectSeparate	 SMALLINT DEFAULT 0,
+	AllocateSeparate 	SMALLINT DEFAULT 0,
+	JobSeparate 	SMALLINT DEFAULT 0,
+	PartSeparate 	SMALLINT DEFAULT 0,
+	SideSeparate 	SMALLINT DEFAULT 0,
+	IsExDescription 	SMALLINT DEFAULT 0,
+	BranchSeparate 	SMALLINT DEFAULT 0,
+	InventoryMethod 	SMALLINT DEFAULT 0, -- 0=Periodic 1= perpetual
+	ExcessStatus	SMALLINT DEFAULT 0, -- 0=ไม่มีเงินเกิน 1= ใช้ระบบเงินเกิน
+	OtherIncome SMALLINT DEFAULT 0, -- 0=ไม่มีค่าใช้จ่าย/รายได้อื่นๆในใบเสร็จ 1= มีค่าใช้จ่าย/รายได้อื่นๆในใบเสร็จ
+	SONoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	SONoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	SONoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	SONoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	BILLNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	BILLNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	BILLNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	BILLNoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	BUYNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	BUYNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	BUYNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	BUYNoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	GRNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	GRNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	GRNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	AutoPostGL 	SMALLINT DEFAULT 0, -- 1= autoPostGL
+	AutoServerProc SMALLINT DEFAULT 0, -- 1= ใช้ระบบ Auto Process ที่ Server
+	PosRepSeparate SMALLINT DEFAULT 0,
+	IsBoxDuplicate SMALLINT DEFAULT 0, -- MessageBox เช็ค เอกสารซ้ำ
+	IsJob SMALLINT DEFAULT 0, -- ใช้ JOB
+	CreditLimitFlag SMALLINT DEFAULT 0, -- 0=คืนวงเงินเมื่อรับชำระหนี้  1=คืนวงเงินเมื่อเช็คผ่าน
+	SerialItemPerLine SMALLINT DEFAULT 3,  -- จำนวน Serial ในการพิมพ์ 1 บรรทัด
+	PrintSerialInvoice SMALLINT DEFAULT 1,  -- 0=not Print 1=Print
+	IsEditItemName SMALLINT DEFAULT 0, -- 1= แก้ไขชื่อสินค้าหน้าบิลได้
+	FSCurSum1	FLOAT DEFAULT 0.0, -- ยอดสะสมค่าใช้จ่ายในการขายและบริการ
+	FSCurSum2	FLOAT DEFAULT 0.0, -- ยอดสะสมต้นทุนการผลิต
+	FSCurSum3	FLOAT DEFAULT 0.0, -- ยอดสะสมต้นทุนขายสินค้า
+	FSCurSum4	FLOAT DEFAULT 0.0, -- กำไรสะสมปลายงวด
+	DayCallCust SMALLINT DEFAULT 0, -- จำนวนวัน ที่ต้องโทรตามลูกค้า
+	IsPrintSumPage SMALLINT DEFAULT 0, -- 0 = พิมพ์ sum รายการต่อหน้า , 1= ไม่พิมพ์
+	IsPrintCancel SMALLINT DEFAULT 0, -- 0 = ไม่พิมพ์รายการที่ยกเลิก , 1= พิมพ์รายการที่ยกเลิก
+	IsUseWarehouse SMALLINT DEFAULT 0, -- 0 = ่ใช้ระบบคลังสินค้า , 1= ไม่ใช้ระบบคลังสินค้า
+	MailSMTP VARCHAR(1000), -- Option ส่งเมล์ -> SMTP
+	MailPOP3 VARCHAR(1000),-- Option ส่งเมล์ -> POP3
+	MailFrom VARCHAR(1000),  -- Option ส่งเมล์ -> Send Form
+	IsReceiveFLOAT SMALLINT DEFAULT 0, -- 0 = ไม่ใช้ระบบFix Ueser รับเงิน  , 1= ใช้ระบบFix Ueser รับเงิน
+	IsSetWorkDate SMALLINT DEFAULT 0, -- ไม่ต้องการ Set วันที่ทำงานทุกครั้งที่เปิดโปรแกรม 0=ไม่ Set ,1=Set
+	IsUserGroup SMALLINT DEFAULT 0, -- 1= ใช้ระบบรหัสสินค้าตามกลุ่มพนักงาน 
+	IsCustGroup SMALLINT DEFAULT 0, -- 1= ใช้ระบบรหัสสินค้าตามกลุ่มลูกค้า
+	SaleBaseOnSO SMALLINT DEFAULT 0, --1=Create Sale invoice must be lost from SO ,0=Anything
+	FormDateStyle SMALLINT DEFAULT 0, -- Jum Use
+	FormNumericStyle SMALLINT DEFAULT 0, -- Jum Use
+	IsItemRemainQty SMALLINT DEFAULT 0, -- 1= แสดงยอดจำนวนคำคงเหลือของสินค้าตามที่เก็บด้วย -- Jeab 20030507 --
+	IsShowSetDetail SMALLINT DEFAULT 0, --1 = แสดงรายละเอียดสินค้าชุด aom 24-06-2003
+	IsShowSetPrice SMALLINT DEFAULT 0, --1 = แสดงรายละเอียดสินค้าชุดและราคาขายสินค้า aom 24-06-2003
+	BuyPriceWarning	SMALLINT DEFAULT 0, -- 1= เตือนราคาซื้อสูงกว่าราคาขาย
+	SalePriceLevel SMALLINT DEFAULT 0, -- ระดับราคาขายที่เตือน
+	IsLastBuyPrice SMALLINT DEFAULT 0, -- เตือนราคาซื้อสูงกว่าราคาซื้อล่าสุด
+	IsProcessThread SMALLINT DEFAULT 1,--1=run process in thread  default value , 0 basic mode
+	IsReportThread SMALLINT DEFAULT 1, --1=run report in thread  default value , 0 basic mode
+	CostType SMALLINT DEFAULT 0,-- 0 = ต้นทุนไม่รวมคลัง , 1 = ต้นทุนรวมคลัง
+	ShowItemSetPrice SMALLINT DEFAULT 0,
+	IsSkipAddItemSuplier SMALLINT DEFAULT 0, --1=Don't automatic add supplier code to bcitemsuplier,default 0
+	LastProcess	DATETIME,
+	IsCheckService SMALLINT DEFAULT 1,--1=check bcswinservice every 5 minute 0 = disable 
+	IsBehindIndex SMALLINT DEFAULT 0, -- 0=เรียงตามประเภทรายวัน , 1=เรียงตามการบันทึก -- ต้องการคำนวณสินค้าเรียงตามประเภทรายวันหรือเรียงตามการบันทึก
+	IsMethodCutPO SMALLINT DEFAULT 0, -- 0 = ตัดรายการสั่งซ็้อสินค้ารวมบรรทัด, 1= ตัดรายการสั่งซื้อสินค้าแยกบรรทัด
+	IsTaxType SMALLINT DEFAULT 0,
+	IsNoStockReword SMALLINT DEFAULT 0, -- 1= ไม่ใช่ระบบเช็คสต๊อกย้อนหลัง
+	IsCreateGLTrans SMALLINT DEFAULT 1,  -- 1=(default value) automatic create gl transaction 0=disable 
+	DefaultCostType SMALLINT DEFAULT 0, -- 0 เฉลี่ย 1 FIFO 2 standard
+	IsGetLastDiscount SMALLINT DEFAULT 1,
+	IsDepositCash SMALLINT DEFAULT 0, -- เงินมัดจำใช้ได้กรณีเป็นบิลเงินสดเท่านั้น
+	IsWarnDeposit SMALLINT DEFAULT 0, -- เตือนให้มีการนำเงินมัดจำมาหัก กรณีซื้อ,ขายสินค้า
+	IsHello SMALLINT DEFAULT 0,
+	IsHardLock SMALLINT DEFAULT 0,
+	IsVersion SMALLINT DEFAULT 0, -- 0 = SME, 1 = Exproess, 2 = Pro
+	IsLotDuplicate SMALLINT DEFAULT 0, -- 0 = ไม่ต้องการเตือน Lot ซ้ำ, 1= ต้องการเตือน Lot ซ้ำ
+	IsCode VARCHAR(10),
+	IsSumPo smallint default 0,
+	IsNotEditdoc smallint default 0,--jum CHAMP use only 0=Can edit document 1=Can not edit ole documents
+	IsChkSOQtyWH smallint default 0, --Aom not use for CHAMP เช็คยอดคงเหลือตามคลังเมื่อทำใบสั่งขาย/สั่งจอง
+	IsSmallChange smallint default 0, -- ใช้ระบบเงินทอน
+	PromotionMode SMALLINT DEFAULT 0, --Use extention promotion settine on system managment-->option 2 No 62
+	IsStockAmountType SMALLINT DEFAULT 0, --0=ปกติ,1=ถ้ายอดคงเหลือเป็น 0 ให้ปรับต้นทุนและมูลค่า=0
+	IsReturnType SMALLINT DEFAULT 0, --ในกรณีรับคืนสินค้าแบบไม่อ้าง invoice 0=ต้นทุนรับคืนจากมูลค่ารับคืน,1=ต้นทุนรับคืนจากต้นทุนล่าสุด
+	ItemAmountPoint smallint default 2, --ทศนิยมของมูลค่าสินค้า
+	--for item set type 1 Aom
+	SOItemSetDetail smallint default 0, --ใบสั่งขาย 0=ไม่แสดงรายการย่อยสินค้า,1=แสดงรายการย่อยสินค้า
+	SRItemSetDetail smallint default 0, --ใบสั่งจอง 0=ไม่แสดงรายการย่อยสินค้า,1=แสดงรายการย่อยสินค้า
+	BillItemSetDetail smallint default 0, --ใบสั่งจอง 0=ไม่แสดงรายการย่อยสินค้า,1=แสดงรายการย่อยสินค้า
+	TRReqItemSetDetail smallint default 0, --ใบขอโอน 0=ไม่แสดงรายการย่อยสินค้า,1=แสดงรายการย่อยสินค้า
+	TRItemSetDetail smallint default 0, --ใบโอน 0=ไม่แสดงรายการย่อยสินค้า,1=แสดงรายการย่อยสินค้า
+	IsShowPriceStkTR smallint default 0, --1=สามารถบันทึกและแก้ไขราคาขายสินค้าในใบขอโอนและใบโอนสินค้าระหว่างคลัง
+	IsShowPricePR smallint default 0, --แสดงราคาและมูลค่าสินค้าในบันทึกใบเสนอซื้อและบันทึกใบอนุมัติเสนอซื้อ
+	SelectPrintSerial smallint default 0 -- 0 ไม่เลือกพิมพ์ Serial , 1 = สามารถเลือกพิมพ์ Serial ได้
+	PRIMARY KEY(CompanyName)
+);
+
+------------------ Config of POS ----------------------------
+create table BCConfigurations2
+(
+	CompanyName	VARCHAR(1000) NOT NULL,
+	CompanyNameEng VARCHAR(1000),
+	ManagerName VARCHAR(255),
+	ManagerNameEng VARCHAR(255),
+	Address	VARCHAR(1000),
+	AddressEng VARCHAR(1000),
+	Telephone	VARCHAR(255),
+	Fax	VARCHAR(255),
+	DeficitStatus SMALLINT	DEFAULT 1,
+	YearType	SMALLINT	DEFAULT 0,
+	TaxNumber	VARCHAR(30),
+	DefaultTaxType	SMALLINT	DEFAULT 0,
+	DefaultTaxRate	FLOAT DEFAULT 7.0,
+	DebtOverWarning	SMALLINT DEFAULT 0,
+	SODebtWarning	SMALLINT DEFAULT 0, -- 0=ไม่เตือน 1=เตือน ที่ใบสั่งขาย
+	BillDebtWarning	SMALLINT DEFAULT 0, -- 0=ไม่เตือน 1=เตือน ที่ใบขาย
+	StockStatus	SMALLINT DEFAULT 0,
+	PriceWarning	SMALLINT DEFAULT 0,
+	PriceCostRatio	VARCHAR(30),
+	ItemSetStatus	SMALLINT DEFAULT 0,
+	BeginQty	FLOAT DEFAULT 0.0,
+	QtyPoint	SMALLINT DEFAULT 2,
+	CostPoint	SMALLINT DEFAULT 4,
+	PricePoint	SMALLINT DEFAULT 2,
+	AmountPoint	SMALLINT DEFAULT 2,
+	StockRemain	SMALLINT DEFAULT 0,
+	DetailDiscount	SMALLINT DEFAULT 0,
+	BillDiscount	SMALLINT DEFAULT 0,
+	MultiCurrency	SMALLINT DEFAULT 0,
+	DiscPromotion	SMALLINT DEFAULT 0,
+	PricePromotion	SMALLINT DEFAULT 0,
+	PostGLStatus	SMALLINT DEFAULT 0,
+	GLBalanceCheck	SMALLINT DEFAULT 0,
+	BillConfirm	SMALLINT DEFAULT 0,
+	DefaultItemName	SMALLINT DEFAULT 0,
+	DefaultArName	SMALLINT DEFAULT 0,
+	DefaultApName	SMALLINT DEFAULT 0,
+	DefaultAccName	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,
+	ZeroTaxRate	SMALLINT DEFAULT 0,
+	UseLotStatus SMALLINT DEFAULT 0, -- ใช้ Lot หรือไม่ 0=ไม่ใช้ 1=ใช้
+	LotStatus	SMALLINT DEFAULT 0, -- 0=ตามโปรแกรม 1=กำหนดเอง
+	ServiceItem	SMALLINT DEFAULT 0, --- มีการขายสินค้าบริการ
+	SpecialItem SMALLINT DEFAULT 0, --- มีการขายสินค้าพิเศษ เช่น บุหรี่
+	SerialItem SMALLINT DEFAULT 0,  -- มีสินค้า Serial Item หรือไม่
+	UseExpCost	SMALLINT DEFAULT 0, -- 0=ไม่ใช้ต้นทุนแฝง 1=ใช้
+	DiscountMethod SMALLINT DEFAULT 0, -- 0=ลดยอดรวม 1=ลดราคา/หน่วย
+	BillDetailDesc SMALLINT DEFAULT 0, -- 0=แบบปกติ (V2) 1=ตั้งกลุ่มออกบิลได้
+	BuyItemSupplier SMALLINT DEFAULT 0, -- เลือกสินค้าตาม Supplier 0=ไม่ใช้ 1=ใช้ตาม Supplier
+	OppositeUnit	SMALLINT DEFAULT 0,
+	ChqCondition	VARCHAR(50),
+	PaybillRemark	VARCHAR(50),
+	InvoiceOnStart	SMALLINT DEFAULT 0,
+	ChqOnStart	SMALLINT DEFAULT 0,
+	StockLowOnStart	SMALLINT DEFAULT 0,
+	StkDeficitWarn	SMALLINT DEFAULT 0,
+	StkRemainOut	SMALLINT DEFAULT 0,
+	StkRemainIn	SMALLINT DEFAULT 0,
+	LogBookUse	SMALLINT DEFAULT 0,
+	Consignment	SMALLINT DEFAULT 0,
+	PrintSlip	SMALLINT DEFAULT 0,
+	PrintBill	SMALLINT DEFAULT 0,
+	AutoBillDocGroup SMALLINT DEFAULT 0, -- 1=Running เอกสารตามกลุ่มอัตโนมัติ
+	DefItemBillType	SMALLINT DEFAULT 0,
+	DefBuyBillType	SMALLINT DEFAULT 0,
+	DisplayPicture	SMALLINT DEFAULT 0,
+	CurrencySymbol	SMALLINT DEFAULT 0,
+	HCurrencySymbol	VARCHAR(2) DEFAULT '฿',
+	HCurrencyCode VARCHAR(10) DEFAULT 'HBA',
+	CashBalance FLOAT DEFAULT 0.0, -- ยอดเงินสดยกมา
+	PayBillDuplicate SMALLINT DEFAULT 0, -- 1=วางบิลซ้ำได้
+	DepartSeparate	 SMALLINT DEFAULT 0,
+	ProjectSeparate	 SMALLINT DEFAULT 0,
+	AllocateSeparate 	SMALLINT DEFAULT 0,
+	JobSeparate 	SMALLINT DEFAULT 0,
+	PartSeparate 	SMALLINT DEFAULT 0,
+	SideSeparate 	SMALLINT DEFAULT 0,
+	IsExDescription 	SMALLINT DEFAULT 0,
+	BranchSeparate 	SMALLINT DEFAULT 0,
+	InventoryMethod 	SMALLINT DEFAULT 0, -- 0=Periodic 1= perpetual
+	ExcessStatus	SMALLINT DEFAULT 0, -- 0=ไม่มีเงินเกิน 1= ใช้ระบบเงินเกิน
+	OtherIncome SMALLINT DEFAULT 0, -- 0=ไม่มีค่าใช้จ่าย/รายได้อื่นๆในใบเสร็จ 1= มีค่าใช้จ่าย/รายได้อื่นๆในใบเสร็จ
+	SONoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	SONoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	SONoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	SONoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	BILLNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	BILLNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	BILLNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	BILLNoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	BUYNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	BUYNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	BUYNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	BUYNoEditDiscount SMALLINT DEFAULT 0, -- 1=แก้ไขส่วนลดไม่ได้
+	GRNoAddnew SMALLINT DEFAULT 0, -- 1=เพิ่มรายการใหม่ไม่ได้
+	GRNoEditQty	SMALLINT DEFAULT 0, -- 1=แก้ไขจำนวนไม่ได้
+	GRNoEditPrice SMALLINT DEFAULT 0, -- 1=แก้ไขราคาไม่ได้
+	AutoPostGL 	SMALLINT DEFAULT 0, -- 1= autoPostGL
+	AutoServerProc SMALLINT DEFAULT 0, -- 1= ใช้ระบบ Auto Process ที่ Server
+	PosRepSeparate SMALLINT DEFAULT 0,
+	IsBoxDuplicate SMALLINT DEFAULT 0, -- MessageBox เช็ค เอกสารซ้ำ
+	IsJob SMALLINT DEFAULT 0, -- ใช้ JOB
+	CreditLimitFlag SMALLINT DEFAULT 0, -- 0=คืนวงเงินเมื่อรับชำระหนี้  1=คืนวงเงินเมื่อเช็คผ่าน
+	SerialItemPerLine SMALLINT DEFAULT 3,  -- จำนวน Serial ในการพิมพ์ 1 บรรทัด
+	PrintSerialInvoice SMALLINT DEFAULT 1,  -- 0=not Print 1=Print
+	IsEditItemName SMALLINT DEFAULT 0, -- 1= แก้ไขชื่อสินค้าหน้าบิลได้
+	FSCurSum1	FLOAT DEFAULT 0.0, -- ยอดสะสมค่าใช้จ่ายในการขายและบริการ
+	FSCurSum2	FLOAT DEFAULT 0.0, -- ยอดสะสมต้นทุนการผลิต
+	FSCurSum3	FLOAT DEFAULT 0.0, -- ยอดสะสมต้นทุนขายสินค้า
+	FSCurSum4	FLOAT DEFAULT 0.0, -- กำไรสะสมปลายงวด
+	DayCallCust SMALLINT DEFAULT 0, -- จำนวนวัน ที่ต้องโทรตามลูกค้า
+	IsPrintSumPage SMALLINT DEFAULT 0, -- 0 = พิมพ์ sum รายการต่อหน้า , 1= ไม่พิมพ์
+	IsPrintCancel SMALLINT DEFAULT 0, -- 0 = ไม่พิมพ์รายการที่ยกเลิก , 1= พิมพ์รายการที่ยกเลิก
+	IsUseWarehouse SMALLINT DEFAULT 0, -- 0 = ่ใช้ระบบคลังสินค้า , 1= ไม่ใช้ระบบคลังสินค้า
+	MailSMTP VARCHAR(1000), -- Option ส่งเมล์ -> SMTP
+	MailPOP3 VARCHAR(1000),-- Option ส่งเมล์ -> POP3
+	MailFrom VARCHAR(1000),  -- Option ส่งเมล์ -> Send Form
+	IsReceiveFLOAT SMALLINT DEFAULT 0, -- 0 = ไม่ใช้ระบบFix Ueser รับเงิน  , 1= ใช้ระบบFix Ueser รับเงิน
+	IsSetWorkDate SMALLINT DEFAULT 0, -- ไม่ต้องการ Set วันที่ทำงานทุกครั้งที่เปิดโปรแกรม 0=ไม่ Set ,1=Set
+	IsUserGroup SMALLINT DEFAULT 0, -- 1= ใช้ระบบรหัสสินค้าตามกลุ่มพนักงาน 
+	IsCustGroup SMALLINT DEFAULT 0, -- 1= ใช้ระบบรหัสสินค้าตามกลุ่มลูกค้า
+	SaleBaseOnSO SMALLINT DEFAULT 0, --1=Create Sale invoice must be lost from SO ,0=Anything
+	FormDateStyle SMALLINT DEFAULT 0, -- Jum Use
+	FormNumericStyle SMALLINT DEFAULT 0, -- Jum Use
+	IsItemRemainQty SMALLINT DEFAULT 0, -- 1= แสดงยอดจำนวนคำคงเหลือของสินค้าตามที่เก็บด้วย -- Jeab 20030507 --
+	IsShowSetDetail SMALLINT DEFAULT 0, --1 = แสดงรายละเอียดสินค้าชุด aom 24-06-2003
+	IsShowSetPrice SMALLINT DEFAULT 0, --1 = แสดงรายละเอียดสินค้าชุดและราคาขายสินค้า aom 24-06-2003
+	BuyPriceWarning	SMALLINT DEFAULT 0, -- 1= เตือนราคาซื้อสูงกว่าราคาขาย
+	SalePriceLevel SMALLINT DEFAULT 0, -- ระดับราคาขายที่เตือน
+	IsLastBuyPrice SMALLINT DEFAULT 0, -- เตือนราคาซื้อสูงกว่าราคาซื้อล่าสุด
+	IsProcessThread SMALLINT DEFAULT 1,--1=run process in thread  default value , 0 basic mode
+	IsReportThread SMALLINT DEFAULT 1, --1=run report in thread  default value , 0 basic mode
+	CostType SMALLINT DEFAULT 0,-- 0 = ต้นทุนไม่รวมคลัง , 1 = ต้นทุนรวมคลัง
+	ShowItemSetPrice SMALLINT DEFAULT 0,
+	IsSkipAddItemSuplier SMALLINT DEFAULT 0, --1=Don't automatic add supplier code to bcitemsuplier,default 0
+	LastProcess	DATETIME,
+	IsCheckService SMALLINT DEFAULT 1,--1=check bcswinservice every 5 minute 0 = disable 
+    IsBehindIndex SMALLINT DEFAULT 0, -- 0=เรียงตามประเภทรายวัน , 1=เรียงตามการบันทึก -- ต้องการคำนวณสินค้าเรียงตามประเภทรายวันหรือเรียงตามการบันทึก
+	IsMethodCutPO SMALLINT DEFAULT 0, -- 0 = ตัดรายการสั่งซ็้อสินค้ารวมบรรทัด, 1= ตัดรายการสั่งซื้อสินค้าแยกบรรทัด
+	IsTaxType SMALLINT DEFAULT 0,
+	IsNoStockReword SMALLINT DEFAULT 0, -- 1= ไม่ใช่ระบบเช็คสต๊อกย้อนหลัง
+	IsCreateGLTrans SMALLINT DEFAULT 1,  -- 1=(default value) automatic create gl transaction 0=disable 
+	DefaultCostType SMALLINT DEFAULT 0, -- 0 เฉลี่ย 1 FIFO 2 standard
+	IsGetLastDiscount SMALLINT DEFAULT 1,
+	IsDepositCash SMALLINT DEFAULT 0, -- เงินมัดจำใช้ได้กรณีเป็นบิลเงินสดเท่านั้น
+	IsWarnDeposit SMALLINT DEFAULT 0, -- เตือนให้มีการนำเงินมัดจำมาหัก กรณีซื้อ,ขายสินค้า
+	IsHello SMALLINT DEFAULT 0,
+	IsHardLock SMALLINT DEFAULT 0,
+	IsVersion SMALLINT DEFAULT 0, -- 0 = SME, 1 = Exproess, 2 = Pro
+	IsLotDuplicate SMALLINT DEFAULT 0, -- 0 = ไม่ต้องการเตือน Lot ซ้ำ, 1= ต้องการเตือน Lot ซ้ำ
+	IsCode VARCHAR(10)
+    PRIMARY KEY(CompanyName)
+);
+
+create table BCMailConfig
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	UserName	VARCHAR(50) NOT NULL,
+	EmailAddress	VARCHAR(255) NOT NULL,
+	POApprove	SMALLINT DEFAULT 0,
+	QuoApprove	SMALLINT DEFAULT 0,
+	SOApprove	SMALLINT DEFAULT 0
+	PRIMARY KEY(UserName,EmailAddress)
+);
+
+create table BCARDebtTable
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ArCode	VARCHAR(20) NOT NULL,
+	PeriodNo	SMALLINT DEFAULT 0 NOT NULL,
+	CurrencyCode	VARCHAr(10) NOT NULL,
+	DebtAmount	FLOAT DEFAULT 0.0,
+	ChqOnHand	FLOAT DEFAULT 0.0,
+	CreditOnHand	FLOAT DEFAULT 0.0,
+	ChqReturn	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ArCode,PeriodNo,CurrencyCode)
+);
+create table BCTrnasportLine	--เส้นทางการขนส่ง
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(20) NOT NULL, --รหัสเส้นทางขนส่ง
+	StartTransport	VARCHAR(1000), --จุดเริ่มต้นขนส่ง
+	StopTransport	VARCHAR(1000) --ปลายทางขนส่ง
+    PRIMARY KEY(Code)
+);
+
+create table BCAR
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(20) NOT NULL,
+	Name1	VARCHAR(1000) NOT NULL,
+	Name2	VARCHAR(1000),
+	DefDeliveryAddr VARCHAR(10),
+	DefContactCode	VARCHAR(10),
+	DefTransport	VARCHAR(10),
+	BillAddress	VARCHAR(1000),
+	WorkAddress	VARCHAR(1000),
+	Telephone	VARCHAR(50),
+	Fax	VARCHAR(50),
+	AccountCode	VARCHAR(20),
+	IDCardNo VARCHAR(30), -- เลขที่บัตรประชาชน
+	LastContactDate	DATETIME,
+	LastPayDate	DATETIME,
+	SaleCode	VARCHAR(10),	
+	ParentCode VARCHAR(20), -- เจ้านาย
+	BillCredit SMALLINT DEFAULT 0, -- เครดิตตามบิล
+	TransportCredit SMALLINT DEFAULT 0, -- เครดิตตามขนส่ง
+	DetailDiscount	VARCHAR(35),
+	Discount	VARCHAR(35),
+	CashDiscount	VARCHAR(35), -- ส่วนลดเงินบาท ท้ายบิล
+	DebtLimit1	FLOAT DEFAULT 0.0,	-- ยอดวงเงิน
+	DebtLimit2	FLOAT DEFAULT 0.0,	-- ยอดวงเงินสูงสุด
+	DebtLimitBal FLOAT DEFAULT 0.0,	-- ยอดวงเงินคงเหลือ CHM ตอนแรก=DebtLimit1
+	DebtAmount	FLOAT DEFAULT 0.0, -- Home Currency
+	ChqOnHand	FLOAT DEFAULT 0.0, -- Home Currency
+	CreditOnHand	FLOAT DEFAULT 0.0, -- Home Currency
+	ChqReturn	FLOAT DEFAULT 0.0, -- Home Currency
+	ExcessAmount	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับสะสมนำไปหักครั้งต่อไป
+	IsMakeTrans SMALLINT DEFAULT 0, -- 0=ออกบิลได้ 1=ออกบิลไม่ได้
+	TaxType	SMALLINT DEFAULT 0, -- 0=แยกนอก 1=รวมใน 2=อัตรา 0
+	DefaultTaxRate	FLOAT DEFAULT 7.0,
+	TaxNo	VARCHAR(20),
+	PaymentRemark	VARCHAR(50),
+	StatementRemark	VARCHAR(50),
+	PicFileName	VARCHAR(50),
+	TypeCode	VARCHAR(10),
+	GroupCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	HomePage	VARCHAR(255),
+	EmailAddress	VARCHAR(40),
+	GroupOfDebt	VARCHAR(10),
+	PersonType	SMALLINT DEFAULT 0,	-- 0=บุคลลธรรมดา 1=นิติบุคคล
+	AuthorizeAmount FLOAT	DEFAULT 0.0, -- ทุนจดทะเบียน
+	DocPicRefFile1	VARCHAR(255),	-- เอกสารอ้างอิง 1
+	DocPicRefFile2	VARCHAR(255), -- เอกสารอ้างอิง 2
+	BirthDay	DATETIME,	-- วันเกิด
+	CustAge	SMALLINT DEFAULT 0,	-- อายุลูกหนี้
+	CustStatus	SMALLINT DEFAULT 0,	-- 0=ลูกค้า 1=ลูกหนี้
+	CustCreditType	SMALLINT DEFAULT 0,	-- 0=เงินสด 1=เงินเชื่อ 2=ตามบิล
+	ReceiveByDay		VARCHAR(30),	--จ่ายเงินตามวัน เช่น จันทร์-ศุกร์
+	ReceiveByDate	VARCHAR(30),	--จ่ายเงินตามวันที่ เช่น ทุกวันที่ 15 ของเดือน
+	ReceiveByWeek	SMALLINT DEFAULT 0,	--จ่ายเงินตามสัปดาห์ที่ เช่น ทุกสัปดาที่ 4
+	PayBillByDay		VARCHAR(30),	--วางบิลตามวัน เช่น จันทร์-ศุกร์
+	PayBillByDate	VARCHAR(30),	--วางบิลตามวันที่ เช่น ทุกวันที่ 15 ของเดือน
+	PayBillByWeek	SMALLINT DEFAULT 0,	--วางบิลตามสัปดาห์ที่ เช่น ทุกสัปดาที่ 4
+	RouteStep1	VARCHAR(10),
+	RouteStep2	VARCHAR(10),
+	RouteStep3	VARCHAR(10),
+	RouteStep4	VARCHAR(10),
+	RouteStep5	VARCHAR(10),
+	RouteStep6	VARCHAR(10),
+	RouteStep7	VARCHAR(10),
+	RouteStep8	VARCHAR(10),
+	RouteStep9	VARCHAR(10),
+	RouteStep10	VARCHAR(10),
+	PriceLevel	SMALLINT DEFAULT 0, -- ระดับราคาขาย 1-8
+	ActiveStatus	SMALLINT DEFAULT 1,
+	MapCode	VARCHAR(10),	-- รหัสแผนที่ที่ตั้งบริษัทลูกค้า
+	MapPosition_X	SMALLINT	DEFAULT  0,
+	MapPosition_Y	SMALLINT	DEFAULT 0,
+	ItemDescGroup	SMALLINT	DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	CreditMenCode	VARCHAR(10),  --พนักงานสินเชื่อ
+	CreditMenCode2	VARCHAR(10),  --พนักงานสินเชื่อ
+	CreditMenCode3	VARCHAR(10),  --พนักงานสินเชื่อ
+	PressMenCode	VARCHAR(10), --พนักงานเร่งรัด
+	PressMenCode2	VARCHAR(10), --พนักงานเร่งรัด
+	PressMenCode3	VARCHAR(10), --พนักงานเร่งรัด
+	KeepFLOATMenCode	VARCHAR(10),  --พนักงานเก็บเงิน
+	KeepFLOATMenCode2	VARCHAR(10),  --พนักงานเก็บเงิน
+	KeepFLOATMenCode3	VARCHAR(10),  --พนักงานเก็บเงิน
+	CondPayCode	VARCHAR(10),  --เงื่อนไขการชำระเงิน
+	UseGroupFLOAT	SMALLINT	DEFAULT  0, --ลูกหนี้หลายรายใช้วงเงินร่วมกันได้ (บริษัทในเครือ)	
+	GroupCreditCode		VARCHAR(10), --รหัสกลุ่มวงเงิน	
+	HomeCurCode VARCHAR(10), --รหัสสกุลเงินหลัก Aom 28-04-2003
+-- ************** POS **********
+	MemberID VARCHAR(20),
+	BeginDate	DATETIME,
+	ExpireDate	DATETIME,
+	ReMember SMALLINT DEFAULT 0, -- ต่ออายุสมาชิก=1
+	SumOfMark1 SMALLINT DEFAULT 0, -- ยอดแต้มสะสมคงเหลือ
+	SumOfMark2 SMALLINT DEFAULT 0, -- ยอดแต้มสะสมคงเหลือ
+	SumOfValue1	FLOAT DEFAULT 0.0, -- ยอดเงินสะสม
+	SumOfValue2	FLOAT DEFAULT 0.0, -- ยอดเงินสะสม
+-- ************** POS **********
+	EarnestAmount	FLOAT DEFAULT 0.0, -- ยอดเงินล่วงหน้า
+--for address by aom
+	billcompanyname VARCHAR(255),
+	billisdefault SMALLINT DEFAULT 0,
+	billrestype VARCHAR(255),
+	billno varchar(10),
+	billmoo varchar(10),
+	billvillage VARCHAR(255),
+	billbuilding VARCHAR(255),
+	billfloor varchar(10),
+	billroom varchar(10),
+	billsoi VARCHAR(255),
+	billroad VARCHAR(255),
+	billsubdist VARCHAR(255),
+	billdistrict VARCHAR(255),
+	billprovince VARCHAR(255),
+	billcountry VARCHAR(255),
+	billzipcode varchar(10),
+	billissubdist smallint default 0, -- by jum
+	billisdistrict smallint default 0, --by jum
+	homecompanyname VARCHAR(255),
+	homeisdefault SMALLINT DEFAULT 0,
+	homerestype VARCHAR(255),
+	homeno varchar(10),
+	homemoo varchar(10),
+	homevillage VARCHAR(255),
+	homebuilding VARCHAR(255),
+	homefloor varchar(10),
+	homeroom varchar(10),
+	homesoi VARCHAR(255),
+	homeroad VARCHAR(255),
+	homesubdist VARCHAR(255),
+	homedistrict VARCHAR(255),
+	homeprovince VARCHAR(255),
+	homecountry VARCHAR(255),
+	homezipcode varchar(10),
+	homeissubdist smallint default 0, -- by jum
+	homeisdistrict smallint default 0, --by jum
+	--for EVS project
+	DiscountWord VARCHAR(1000),
+	DefaultWTaxCash FLOAT DEFAULT 3.0 -- Jeab 2005-09-13 ให้บริการจากการขายบัตรเงินสด
+    PRIMARY KEY(CODE)
+);
+
+CREATE  INDEX IDX_ARNAME ON BCAR(NAME1);
+CREATE  INDEX IDX_ARACT	ON BCAR(ActiveStatus);
+
+create table BCARPeriodState -- ยอดหนี้ในแต่ละ Period แสดงเป็น Home Currency
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ArCode	VARCHAR(20) NOT NULL,
+	PeriodNo	SMALLINT DEFAULT 0,
+	BeginAmount	FLOAT DEFAULT 0.0, -- ยอดยกมา
+	DebtAmount	FLOAT DEFAULT 0.0, -- ยอดตั้งลูกหนี้
+	CNAmount	FLOAT DEFAULT 0.0, -- ยอดลดหนี้
+	DebitAmount	FLOAT DEFAULT 0.0, -- ยอดเพิ่หนี้
+	ReceiptAmount	FLOAT DEFAULT 0.0, -- ยอดตัดชำระหนี้
+	EndAmount	FLOAT DEFAULT 0.0, -- ยอดยกไป
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- กำไรขาดทุนประจำงวด
+	advanceamt		FLOAT DEFAULT 0.0,
+	advanceretamt	FLOAT DEFAULT 0.0,
+	advanceuseamt	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ARPSAr ON BCARPeriodState(ArCode);
+CREATE  INDEX IDX_ARPSPNo ON BCARPeriodState(PeriodNo);
+
+create table BCARINVBALANCE
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ArCode	VARCHAR(20) NOT NULL,
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	PayBillDate	DATETIME,
+	SaleCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	PayBillStatus	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	BillBalance	FLOAT DEFAULT 0.0,
+	BillType	SMALLINT DEFAULT 0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000) --วิธีการชำระเงิน 2
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_ARINVBDATE ON BCARINVBALANCE(DOCDATE);
+--CREATE  INDEX IDX_ARINVBDOCNO ON BCARINVBALANCE(DOCNO);
+CREATE  INDEX IDX_ARINVBARCD ON BCARINVBALANCE(ARCODE);
+CREATE  INDEX IDX_ARINVBARDEP ON BCARINVBALANCE(DEPARTCODE);
+CREATE  INDEX IDX_ARINVBSALE ON BCARINVBALANCE(SALECODE);
+CREATE  INDEX IDX_ARINVBBS	ON BCARINVBALANCE(PayBillStatus);
+CREATE  INDEX IDX_ARINVBBT ON BCARINVBALANCE(BillType);
+CREATE  INDEX IDX_ARINVBBal ON BCARINVBALANCE(BillBalance);
+CREATE  INDEX IDX_ARINVBDUE ON BCARINVBALANCE(DueDate);
+
+create table BCAROtherDebt -- บันทึกลูกหนี้อื่นๆ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ArCode	VARCHAR(20) NOT NULL,
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	SumofDebit	FLOAT DEFAULT 0.0,
+	SumofCredit	FLOAT DEFAULT 0.0,
+	DepartCode	VARCHAR(10) ,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	PayBillDate	DATETIME,
+	SaleCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	PayBillStatus	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000) --วิธีการชำระเงิน 2	
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_AODBS	ON BCAROtherDebt(PayBillStatus);
+CREATE  INDEX IDX_AODBal ON BCAROtherDebt(BillBalance);
+CREATE  INDEX IDX_AODAR	ON BCAROtherDebt(ArCode);
+--CREATE  INDEX IDX_AODOCNO	ON BCAROtherDebt(DOCNO);
+CREATE  INDEX IDX_AODDUE ON BCAROtherDebt(DueDate);
+CREATE  INDEX IDX_AODPNTC ON BCAROtherDebt(printcount);
+
+create table BCARINVOICE
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20) NOT NULL,
+	PassBillTo VARCHAR(20) ,
+-- ************** POS ---
+	ArName VARCHAR(1000), -- สำหรับ POS
+	ArAddress	VARCHAR(1000), -- สำหรับ POS
+	CashierCode	VARCHAR(10),
+	ShiftNo	SMALLINT DEFAULT 0, -- กะที่
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	PosStatus SMALLINT DEFAULT 0, -- 0=ไม่ใช่ 1=ใบกำกับอย่างย่อ 2=ใบกำกับอย่างเต็ม
+	BillTime	VARCHAR(15), -- เวลาของ POS
+	CreditType	VARCHAR(10),
+	CreditBranch VARCHAr(40),
+	CreditDueDate	DATETIME,
+	CreditNo	VARCHAR(20), -- เลขที่บัตรเครดิต
+	CofirmNo	VARCHAR(20), --  เลขทีอนุมัติ
+	ChargeWord	VARCHAR(30), -- % ที่ Chare
+	CreditBaseAmount FLOAT DEFAULT 0.0, -- ยอดเงินบัตรเครดิตที่คิดค่า Charge
+	GrandTotal FLOAT DEFAULT 0.0, -- ยอดเงินที่จะได้รับจริง NetAmount+ChargeAmount
+	CoupongAmount	FLOAT DEFAULT 0.0, -- ยอดจ่ายเป็นคูปอง
+	CoupongDesc	VARCHAR(255),	-- หมายเหตุคูปอง เช่นจำนวน
+	ChangeAmount FLOAT DEFAULT 0.0, --ยอดเงินทอน
+	SumMarkCount1	SMALLINT DEFAULT 0, -- แต้มสะสมราคาปกติ
+	SumMarkCount2	SMALLINT DEFAULT 0, -- แต้มสะสมราคาพิเศษ
+	SumMarkValue1	FLOAT DEFAULT 0.0, -- มูลค่าสะสมราคาปกติ
+	SumMarkValue2	FLOAT DEFAULT 0.0, -- มูลค่าสะสมราคาพิเศษ
+-- ************** POS ---
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DeliveryDay	SMALLINT DEFAULT 0, -- ส่งของภายใน
+	DeliveryDate	DATETIME, -- วันที่ลงของให้ลูกค้า
+	DueDate	DATETIME,
+	PayBillDate	DATETIME,
+	SaleCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillType	SMALLINT DEFAULT 0,
+	BillGroup	VARCHAR(10),
+	RefDocNo	VARCHAR(20), -- เลขที่เอกสารอ้างอิง
+	CrAuthorizeMan VARCHAR(20),
+	DeliveryAddr VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	TransportCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	DepositIncTax SMALLINT DEFAULT 1, -- เงินมัดจำ 1 = มีภาษี 0= ไม่มี Tax
+	SumOfDeposit1	FLOAT DEFAULT 0.0, -- สำหรับตัดยอดของบิล
+	SumOfDeposit2	FLOAT DEFAULT 0.0, -- สำหรับ post GL แต่ต้องถอด Vat ถ้าเป็นรวมใน
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetDebtAmount * ExchangRate  -- Jeab 2003-04-21
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting SMALLINT DEFAULT 0,--1=start posting GL 0=other
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsCreditNote	SMALLINT DEFAULT 0, -- 0=ยังไม่ลดหนี้ 1=ลดหนี้แล้ว
+	IsDebitNote	SMALLINT DEFAULT 0, -- 0=ยังไม่เพิ่มหนี้ 1=เพิ่มหนี้แล้ว
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=auto 1=manual
+	PayBillStatus	SMALLINT DEFAULT 0, -- 1 วางบิลอยู่
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	ExchangeProfit	FLOAT DEFAULT 0.0,
+	CustTypeCode	VARCHAR(10),
+	CustGroupCode	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	Remark1	VARCHAR(30),
+	Remark2	VARCHAR(30),
+	Remark3	VARCHAR(30),
+	Remark4	VARCHAR(30),
+	Remark5	VARCHAR(30),
+	IsReceiveFLOAT	SMALLINT DEFAULT 0, -- Flag 0 = คนออกบิลอย่างเดียว , 1 = คนรับเงินอย่างเดียว
+	IsConditionSend SMALLINT DEFAULT 0, -- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	TotalTransport	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	---LENSO Modify Project
+	GrossWeight	FLOAT DEFAULT 0.0, -- น้ำหนักรวมสินค้า+น้ำหนักภาชนะ
+	PrintCount SMALLINT DEFAULT 0, -- Count Print saleorder -- Jeab-20030923 
+	SORefNo	VARCHAR(1000), -- Total SO reference -- Jeab 19-04-2003 -- A& 
+	DORefNo	VARCHAR(1000), -- Total DO reference -- Jeab 19-04-2003 
+	HoldingStatus SMALLINT DEFAULT 0, -- 0=ไม่ Holding 1= Holding -- Jeab 20030506-----
+	TimeTransport		VARCHAR(10),	-- เวลาข่นส่ง
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	RefType SMALLINT DEFAULT 0, -- 0=billing,2=sale order,3=quatation
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	--- MERIDIAN Modify
+	Netweight	FLOAT DEFAULT 0.0, -- น้ำหนักรวมสินค้า
+	NumOfPallet	FLOAT DEFAULT 0.0, -- จำนวนภาชนะ
+	--for EVS project
+	InvoiceType VARCHAR(10),
+	QtyAmount FLOAT DEFAULT 0.0,
+	QtyDefault SMALLINT DEFAULT 1,
+	QtyCopy SMALLINT DEFAULT 1,
+	MergeItem SMALLINT DEFAULT 1,
+	Newline SMALLINT DEFAULT 1,
+	PriceCopy SMALLINT DEFAULT 0,
+	WHCopy SMALLINT DEFAULT 0,
+	CalcTaxFlag SMALLINT DEFAULT 0,
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000), --วิธีการชำระเงิน 2	
+	promotioncode VARCHAR(20),
+	SumOfWTaxCash	FLOAT DEFAULT 0.0,	-- Jeab 2005-09-12
+	SumBaseWTaxCash	FLOAT DEFAULT 0.0	-- Jeab 2005-09-12
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_ARINVDATE ON BCARINVOICE(DOCDATE);
+CREATE  INDEX IDX_ARINVARCD ON BCARINVOICE(ARCODE);
+--CREATE  INDEX IDX_ARINVDOCNO ON BCARINVOICE(DOCNO);
+CREATE  INDEX IDX_ARINVARDEP ON BCARINVOICE(DEPARTCODE);
+CREATE  INDEX IDX_ARINVSALE ON BCARINVOICE(SALECODE);
+CREATE  INDEX IDX_ARINVBAL ON BCARINVOICE(BillBalance);
+CREATE  INDEX IDX_ARINVDUE ON BCARINVOICE(DueDate);
+CREATE  INDEX IDX_ARINVBS	ON BCARINVOICE(PayBillStatus);
+CREATE  INDEX IDX_ARINVBT	ON BCARINVOICE(BillType);
+CREATE  INDEX IDX_ARINVREC	ON BCARINVOICE(RecurName);
+CREATE  INDEX IDX_ARINVROW	ON BCARINVOICE(ROWORDER);
+CREATE  INDEX IDX_ARINVHAMT	ON BCARINVOICE(HomeAmount);
+CREATE INDEX IDX_ARINVPNTC ON BCARINVOICE(PrintCount);
+
+-- ประเภทรายวัน (0 = ยอดยกมา, 1=รับสินค้าสำเร็จรูป,2=ซื้อ, 3=เพิ่มเจ้าหนี้,4=ขาย, 5=รับคืน,6,เพิ่มลูกหนี้, 7=ส่งคืน, 8=เบิกใช้,  9=รับคืนจาการเบิก,10=ปรับปรุง+ 11=ปรับปรุง-,12=โอนเข้า,13=โอนออก) 20=ส่งคืนสินค้าสำเร็จรูป
+
+create table BCARINVOICESUB
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 4,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	CNQty	FLOAT DEFAULT 0.0,
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนขายทั้งสิ้น ไม่ใช่ต้นทุนขายต่อหน่วย
+	BalanceAmount	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	OppositePrice2	FLOAT DEFAULT 0.0, -- ราคาต่อหน่วยที่ 2 (เส้น)
+	SORefNo	VARCHAR(20),
+	PORefNo	VARCHAR(20), --Order reference number
+	StockType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	LineNumber	SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	BarCode	VARCHAR(20),
+	CustTypeCode	VARCHAR(10),
+	CustGroupCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+-- ************* POS ------------
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	BillTime	VARCHAR(15),
+	CashierCode	VARCHAR(10),
+	ShiftNo	SMALLINT DEFAULT 0, -- กะที่
+	PosStatus SMALLINT DEFAULT 0, -- 0=ไม่ใช่ 1=ใบกำกับอย่างย่อ 2=ใบกำกับอย่างเต็ม
+	PriceStatus SMALLINT DEFAULT 0, -- 0=ราคาปกติ 1=ราคาโปรโมชั่น
+	IsPromotion SMALLINT DEFAULT 0, 
+-- ************* POS ------------
+	PremiumStatus SMALLINT DEFAULT 0, -- 0 = ไม่ใช่ของแถม ,1 = เป็นของแถม
+	--Auto Packing Section by นก
+	FixUnitCost	FLOAT DEFAULT 0.0,
+	FixUnitQty		FLOAT DEFAULT 0.0,
+	IsConditionSend SMALLINT DEFAULT 0,-- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	TransportAmount	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	AVERAGECOST FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for item set by aom 15-07-2003
+	itemsetcode VARCHAR(25),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25		
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	RefType SMALLINT DEFAULT 0, -- 0=billing,2=sale order,3=quatation
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+--for evs project
+	PriceCode varchar(10),
+	InvoiceType varchar(10),
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0,
+	DORefNo	VARCHAR(20),
+	DeliveryStatus SMALLINT DEFAULT 0, -- 0 = ไม่อ้างอิงใบสั่งจ่าย  , 1= อ้างอิงใบสั่งจ่าย
+	ItemNameDesc VARCHAR(1000),
+	promotioncode VARCHAR(20),
+	masteritemcode	VARCHAR(25),
+	BTDisc FLOAT DEFAULT 0.0,
+	DiscCashCard SMALLINT DEFAULT 0, -- ใช่ส่วนลดบัตรเงินสด	
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	BaseWTax	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ARINVSDATE ON BCARINVOICESUB(DOCDATE);
+CREATE  INDEX IDX_ARINVSDOCNO ON BCARINVOICESUB(DOCNO);
+CREATE  INDEX IDX_ARINVSARCD ON BCARINVOICESUB(ARCODE);
+CREATE  INDEX IDX_ARINVSARDEP ON BCARINVOICESUB(DEPARTCODE);
+CREATE  INDEX IDX_ARINVSSALE ON BCARINVOICESUB(SALECODE);
+CREATE  INDEX IDX_ARINVSIND ON BCARINVOICESUB(BehindIndex);
+CREATE  INDEX IDX_ARINVSTYPE ON BCARINVOICESUB(MYTYPE);
+CREATE  INDEX IDX_ARINVSITEM ON BCARINVOICESUB(ITEMCODE);
+CREATE  INDEX IDX_ARINVSWH ON BCARINVOICESUB(WHCODE);
+CREATE  INDEX IDX_ARINVSSHLF ON BCARINVOICESUB(SHELFCODE);
+CREATE  INDEX IDX_ARINVSBND ON BCARINVOICESUB(BRANDCODE);
+CREATE  INDEX IDX_ARINVSGRP ON BCARINVOICESUB(GROUPCODE);
+CREATE  INDEX IDX_ARINVSTYPEC ON BCARINVOICESUB(TYPECODE);
+CREATE  INDEX IDX_ARINVSFRM ON BCARINVOICESUB(FORMATCODE);
+CREATE  INDEX IDX_ARINVSTS ON BCARINVOICESUB(TransState);
+CREATE  INDEX IDX_ARINVSERVICE ON BCARINVOICESUB(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_ARINVISPROCESS ON BCARINVOICESUB(ItemCode,IsProcess);
+CREATE  INDEX IDX_ARINVISHAMT ON BCARINVOICESUB(HomeAmount);
+CREATE  INDEX IDX_ARINVISPAK1 ON BCARINVOICESUB(PackingRate1);
+CREATE  INDEX IDX_ARINVISPAK2 ON BCARINVOICESUB(PackingRate2);
+
+create table BCITEMSUBSTITUTE	-- สินค้าทดแทน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	SUBSTITUTECode VARCHAR(25),
+	MyDescription	VARCHAR(25),
+	UnitCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITMSTTCD ON BCITEMSUBSTITUTE(ItemCode);
+CREATE  INDEX IDX_ITMSTTTC ON BCITEMSUBSTITUTE(SUBSTITUTECode);
+CREATE  INDEX IDX_ITM_UNIT_STTTC ON BCITEMSUBSTITUTE(SUBSTITUTECode,UnitCode);
+
+create table BCITEMMATCH	-- สินค้าคู่และไม่คู่
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	MasterCode	VARCHAR(25),
+	MatchCode	VARCHAR(25),
+	MyDescription	VARCHAR(25),
+	Qty	FLOAT	DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	MatchStatus	SMALLINT	DEFAULT 0	-- 0=Math	1=Not Math
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITMMMT	ON BCITEMMATCH(MasterCode);
+CREATE  INDEX IDX_ITMMMC	ON BCITEMMATCH(MatchCode);
+CREATE  INDEX IDX_ITMMMC2 ON BCITEMMATCH(MatchCode,UnitCode);
+
+create table BCSTKInspect -- รายการตรวจนับ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000), -- หมายเหตุในการออกใบตรวจนับ
+	ResultDesc	VARCHAR(1000), -- หมายเหตุผลการตรวจนับ
+	InspectBy	SMALLINT DEFAULT 0,	-- 0=สินค้า,คลัง 1=คลัง,สินค้า
+	IsConfirm	SMALLINT DEFAULT 0,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	IsExport smallint default 0,
+	LastEditDateT	DATETIME
+    PRIMARY KEY(DocNo)
+);
+
+create table BCSTKInspectSub -- รายการย่อยตรวจนับ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	InspectBy	SMALLINT DEFAULT 0,	-- 0=สินค้า,คลัง 1=คลัง,สินค้า
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	ItemCode	VARCHAR(25),
+	UnitCode	VARCHAR(10),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	AdjustStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่ปรับปรุง 1=ปรับปรุงแล้ว
+	StkQty	FLOAT	DEFAULT 0.0, -- ยอดสินค้าคงเหลือปัจจุบัน
+	InspectQty FLOAT	DEFAULT 0.0, -- ยอดที่ตรวจนับได้
+	InspectDesc	VARCHAR(255), -- หมายเหตุผลการตรวจนับ
+	DiffQty	FLOAT	DEFAULT 0.0,  -- ผลต่างจากการตรวจนับ
+	BarCode	VARCHAR(20),
+	LineNumber	SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKINSCODE ON BCSTKInspectSub(ItemCode);
+CREATE  INDEX IDX_STKINSWH ON BCSTKInspectSub(WHCode);
+CREATE  INDEX IDX_STKINSWH2 ON BCSTKInspectSub(ItemCode,UnitCode,WHCode,ShelfCode);
+
+create table BCSTKAdjust -- ปรับปรุงสต็อก
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	InspectNo	VARCHAR(20), -- เลขที่ใบตรวจนับ
+	MyDescription	VARCHAR(1000), -- หมายเหตุในการออกใบตรวจนับ
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other	
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=auto 1=manual
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	SumAmount	FLOAT	DEFAULT 0.0, -- มูลค่าสินค้าที่เป็นบวก (Stock Over)
+	SumAmount2	FLOAT	DEFAULT 0.0, -- มูลค่าสินค้าที่เป็นลบ (Stock Loss)
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	TaxAmount	FLOAT	DEFAULT 0.0, -- ภาษี
+	TotalAmount 	FLOAT	DEFAULT 0.0, -- ยอดรวมภาษี
+	SumOfExceptTax 	FLOAT	DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	OutputTaxStatus SMALLINT DEFAULT 0, -- 0=ไม่มี 1=มีภาษีขาย
+	AdjustType	SMALLINT DEFAULT 0, -- 0=สินค้าเกินบัญชี 1=สินค้าขาดบัญชี 2=สินค้าขาดบัญชีไม่เหลือซาก
+	PackingStatus	SMALLINT DEFAULT 0, -- 0 = มาจากปรับปรุงสต๊อก , 1 = มาจากการแตก Packing
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	SumOfCost	FLOAT	DEFAULT 0.0, --- 23-11-2002 ---
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	DepartCode	VARCHAR(10)
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_STKINSDDATE ON BCSTKAdjust(DocDate);
+CREATE  INDEX IDX_STKINSGLFORMAT ON BCSTKAdjust(GLFormat);
+CREATE INDEX IDX_STKINSPNTC ON BCSTKAdjust(PrintCount);
+
+create table BCSTKAdjustSub -- ปรับปรุงสต็อก
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 10, -- 10 = ปรับปรุง +, 11=ปรับปรุง-
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	InspectNo	VARCHAR(20), -- เลขที่ใบตรวจนับ
+	InspectRow	INT , -- RowOrder ของรายการย่อยตรวจนับ
+	ItemCode	VARCHAR(25),
+	UnitCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	AdjMark	SMALLINT DEFAULT 0,	-- 0=ปรับปรุง+ 1=ปรับปรุง-
+	Qty	FLOAT	DEFAULT 0.0, -- ยอดปรัปปรุง
+	AdjCost	FLOAT	DEFAULT 0.0, -- ยอดต้นทุนปรัปปรุง
+	Amount	FLOAT	DEFAULT 0.0, -- มูลค่าต้นทุน
+	SumOfCost	FLOAT	DEFAULT 0.0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	Price FLOAT	DEFAULT 0.0, -- ราคา/หน่วย
+	LineNumber	SMALLINT DEFAULT 0,
+	PackingStatus	SMALLINT DEFAULT 0, -- 0 = มาจากปรับปรุงสต๊อก , 1 = มาจากการแตก Packing
+	NetAmount FLOAT	DEFAULT 0.0, -- มูลค่าสินค้า
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก	
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก	
+	AVERAGECOST FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess MONEY DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKADSDOCNO ON BCSTKAdjustSub(DocNo);
+CREATE  INDEX IDX_STKADSCODE ON BCSTKAdjustSub(ItemCode);
+CREATE  INDEX IDX_STKADSWH ON BCSTKAdjustSub(WHCode);
+CREATE  INDEX IDX_STKADSMT ON BCSTKAdjustSub(MyType);
+CREATE  INDEX IDX_STKADSMI ON BCSTKAdjustSub(BehindIndex);
+CREATE  INDEX IDX_STKADSALL1 ON BCSTKAdjustSub(ItemCode,UnitCode,WhCode,ShelfCode);
+CREATE  INDEX IDX_STKADSALL2 ON BCSTKAdjustSub(DocNo,ItemCode,UnitCode,WhCode,ShelfCode);
+CREATE  INDEX IDX_STKADSALL3 ON BCSTKAdjustSub(DocNo,Linenumber);
+CREATE  INDEX IDX_STKADSSERVICE ON BCSTKAdjustSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_STKADSPAK1 ON BCSTKAdjustSub(PackingRate1);
+CREATE  INDEX IDX_STKADSPAK2 ON BCSTKAdjustSub(PackingRate2);
+
+create table BCITEMComponents -- รายการประกอบของสินค้าชุด
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ParentCode	VARCHAR(25), -- รหัสสินค้าชุด
+	ItemCode	VARCHAR(25), -- รหัสประกอบ
+	Qty	FLOAT	DEFAULT 0.0, --จำนวน
+	Price	FLOAT	DEFAULT 0.0, --ราคา
+	Amount	FLOAT	DEFAULT 0.0, -- มูลค่า
+	Price1	FLOAT	DEFAULT 0.0,
+	Amount1	FLOAT	DEFAULT 0.0,
+	Price2	FLOAT	DEFAULT 0.0,
+	Amount2	FLOAT	DEFAULT 0.0,
+	Price3	FLOAT	DEFAULT 0.0,
+	Amount3	FLOAT	DEFAULT 0.0,
+	Price4	FLOAT	DEFAULT 0.0,
+	Amount4	FLOAT	DEFAULT 0.0,
+	Price5	FLOAT	DEFAULT 0.0,
+	Amount5	FLOAT	DEFAULT 0.0,
+	Price6	FLOAT	DEFAULT 0.0,
+	Amount6	FLOAT	DEFAULT 0.0,
+	Price7	FLOAT	DEFAULT 0.0,
+	Amount7	FLOAT	DEFAULT 0.0,
+	Price8	FLOAT	DEFAULT 0.0,
+	Amount8	FLOAT	DEFAULT 0.0,
+	UnitCode	VARCHAR(10) --หน่วยนับ
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITMCPPRC	ON BCITEMComponents(ParentCode);
+CREATE  INDEX IDX_ITMCPITEM	ON BCITEMComponents(ItemCode);
+
+create table BCStkPeriodBal -- ยอด Stock ในแต่ละงวดบัญชี คำนวณเก็บไว้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	PeriodNo	SMALLINT DEFAULT 0, -- หมายเลข Period ตาม GL
+	IsReProcess	SMALLINT DEFAULT 0, -- 0=ไม่ 1= จะต้องReProcess
+	ItemCode	VARCHAR(25), -- รหัสสินค้า
+	UnitCode	VARCHAR(10), -- หน่วยนับ Stock
+	BeginQty	FLOAT	DEFAULT 0.0, -- ยอดยกมาต้นงวด
+	BeginAmount	FLOAT	DEFAULT 0.0,
+	SaleQty	FLOAT	DEFAULT 0.0, -- ยอดตัดขาย
+	SaleAmount	FLOAT	DEFAULT 0.0,
+	BuyQty	FLOAT	DEFAULT 0.0, -- ยอดซื้อ
+	BuyAmount	FLOAT	DEFAULT 0.0,
+	StkRetQty	FLOAT	DEFAULT 0.0, -- ยอดส่งคืนสินค้า
+	StkRetAmount	FLOAT	DEFAULT 0.0,
+	CNQty	FLOAT	DEFAULT 0.0, -- ยอดรับคืนสินค้า
+	CNAmount	FLOAT	DEFAULT 0.0,
+	Db1Qty	FLOAT	DEFAULT 0.0, -- ยอดเพิ่มหนี้ลูกหนี้
+	Db1Amount	FLOAT	DEFAULT 0.0,
+	Db2Qty	FLOAT	DEFAULT 0.0, -- ยอดเพิ่มหนี้เจ้าหนี้
+	Db2Amount	FLOAT	DEFAULT 0.0,
+	IssueQty	FLOAT	DEFAULT 0.0, -- ยอดเบิก
+	IssueAmount	FLOAT	DEFAULT 0.0,
+	IssueRetQty	FLOAT	DEFAULT 0.0, -- ยอดรับคืนเบิก
+	IssueRetAmount	FLOAT	DEFAULT 0.0,
+	FGQty FLOAT	DEFAULT 0.0, -- ยอดรับสำเร็จรูป
+	FGAmount FLOAT	DEFAULT 0.0,
+	InQty FLOAT	DEFAULT 0.0, -- ยอดรับเข้าอื่นๆ
+	InAmount FLOAT	DEFAULT 0.0,
+	OutQty FLOAT	DEFAULT 0.0, -- ยอดจ่ายออกอื่นๆ
+	OutAmount FLOAT	DEFAULT 0.0,
+	EndQty FLOAT	DEFAULT 0.0, -- ยอดยกไป
+	EndAmount FLOAT	DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKBALPNo ON BCStkPeriodBal(PeriodNo);
+CREATE  INDEX IDX_STKBALIC ON  BCStkPeriodBal(ItemCode);
+CREATE  INDEX IDX_STKBALIC1 ON  BCStkPeriodBal(ItemCode,Unitcode);
+CREATE  INDEX IDX_STKBALIC2 ON  BCStkPeriodBal(PeriodNo,ItemCode);
+CREATE  INDEX IDX_STKBALIC3 ON  BCStkPeriodBal(ItemCode,PeriodNo);
+
+create table BCStkWHPeriodBal -- ยอด Stock ในแต่ละงวดบัญชี ของคลัง คำนวณเก็บไว้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	PeriodNo	SMALLINT DEFAULT 0, -- หมายเลข Period ตาม GL
+	ItemCode	VARCHAR(25), -- รหัสสินค้า
+	WHCode	VARCHAR(10), -- คลัง
+	ShelfCode	VARCHAR(10), -- คลัง
+	UnitCode	VARCHAR(10), -- หน่วยนับ Stock
+	BeginQty FLOAT	DEFAULT 0.0,
+	BeginAmount	FLOAT	DEFAULT 0.0,
+	Qty	FLOAT	DEFAULT 0.0, -- ยอดคงเหลือประจำงวด
+	Amount	FLOAT	DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKWBALPNo ON BCStkWHPeriodBal(PeriodNo);
+CREATE  INDEX IDX_STKWBALIC ON  BCStkWHPeriodBal(ItemCode);
+CREATE  INDEX IDX_STKWBALWH ON  BCStkWHPeriodBal(WHCode);
+CREATE  INDEX IDX_STKWBALSH ON  BCStkWHPeriodBal(ShelfCode);
+CREATE  INDEX IDX_STKWBALUN ON  BCStkWHPeriodBal(UnitCode);
+CREATE  INDEX IDX_STKWBALPNo1 ON BCStkWHPeriodBal(ItemCode,UnitCode,WHCode,ShelfCode,PeriodNo);
+
+
+create table BCITEMBILLDESC
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	BillDesc	VARCHAR(255),
+	LineNumber	SMALLINT DEFAULT 0,
+	DescGroup	SMALLINT DEFAULT 0 -- แบ่งตามลูกค้า หรือเจ้าหนี้
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITBILLD_CODE ON BCITEMBILLDESC(ItemCode);
+
+create table BCSUPPLIERPROMO -- ตารางของแถมจากเจ้าหนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ApCode	VARCHAR(20),
+	ItemCode VARCHAR(25), -- รหัสสินค้าหลัก
+	ItemPromo	VARCHAR(25), -- รหัสสินค้าที่แถม
+	UnitCode	VARCHAR(10),
+	Qty	FLOAT	DEFAULT 0.0, 
+	ProStartDate	DATETIME,
+	ProStopDate	DATETIME,
+	LineNumber	SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_SPPROMO_AP ON BCSUPPLIERPROMO(ApCode);
+CREATE  INDEX IDX_SPPROMO_ITM ON BCSUPPLIERPROMO(ItemCode);
+CREATE  INDEX IDX_SPPROMO_UNIT ON BCSUPPLIERPROMO(UnitCode);
+
+
+create table BCItemRenovate -- ใบรับซ่อม
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL, -- เลขที่ใบรับซ่อม
+	DocDate	DATETIME NOT NULL, -- วันที่รับซ่อม
+	ArCode	VARCHAR(20) NOT NULL, -- รหัสลูกค้า
+	ItemCode VARCHAR(25) NOT NULL, -- รหัสสินค้า
+	InvoiceNo	VARCHAR(20), -- เลขที่ใบขาย
+	MyDescription1 VARCHAR(1000), -- หมายเหตุการรับซ่อม
+	MyDescription2 VARCHAR(1000), -- การรับซ่อม
+	FinishDate	DATETIME, -- วันที่กำหนดเสร็จ
+	SendDate DATETIME -- วันที่กำหนดส่งมอบ
+    PRIMARY KEY(DocNo)
+);
+
+create table BCItemStatus -- สถานะสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCITEM
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(25) NOT NULL,
+	Name1	VARCHAR(1000),
+	Name2	VARCHAR(1000),
+	ShortName VARCHAR(255), -- สำหรับ POS
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	ColorCode	VARCHAR(1000),	-- สี
+	MyGrade	VARCHAR(40),	-- เกรด
+	MyClass	VARCHAR(1000), -- รุ่น
+	GenericCode	VARCHAR(10),
+	UnitType	SMALLINT DEFAULT 0, -- หลายหน่วยนับหรือไม่ 0=หน่วยนับเดียว 1=หลายหน่วย 2=หน่วยนับขนาน
+	DefStkUnitCode	VARCHAR(10),
+	DefSaleUnitCode	VARCHAR(10),
+	DefBuyUnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10), -- หน่วยที่ 1 (คิดราคาขาย)
+	OppositeUnit2	VARCHAR(10), -- หน่วยที่ 2 (นับ Stock)
+	Opposite1Price	FLOAT DEFAULT 0.0, -- ราคาขาย
+	OppositeRate	FLOAT DEFAULT 0.0, -- อัตราส่วนของหน่วยที่ 1 ต่อหน่วยที่ 2
+	MySize	VARCHAR(1000),
+	Weight	FLOAT DEFAULT 0.0,
+	LastUpdate	DATETIME,
+	StockType	SMALLINT DEFAULT 0, --ชนิดของสินค้า 0=สินค้าทั่วไป 1=สินค้าบริการ 2=สินค้าที่มี Serial 3=สินค้าสำหรับเช่า 4=สินค้าสำหรับฝากขาย 5=สินค้าชุด 6=สินค้าพิเศษ 
+	StockProcess SMALLINT DEFAULT 0, -- การประมวลผล 0=ตามระบบรวม 1=ห้ามติดลบ
+	VenderCode	VARCHAR(20), -- รับฝากขายจากใคร
+	DepositCondit VARCHAR(35), -- % ที่รับวางเงินมัดจำตามยอดของบิล
+	DeliveryCharge VARCHAR(35), -- ค่าขนส่ง % หรือบาท
+	InstallCharge VARCHAR(35), -- ค่าติดตั้ง % หรือบาท
+	ReturnRemark VARCHAR(255), -- หมายเหุตการรับคืนสินค้า
+	ReturnStatus SMALLINT DEFAULT 0, -- 0=รับคืนทุกกรณี 1=รับคืนทุกกรณี
+	ReturnCharge VARCHAR(30), -- ส่วนลดที่ต้องหัก เมื่อรับคืน
+	ItemStatus VARCHAR(10), -- รหัสสถานะสินค้า
+	NewItemStatus	SMALLINT DEFAULT 0,  -- 0=สินค้าใหม่ 1=สินค้าเก่า
+	RenovateStatus	SMALLINT DEFAULT 0,  -- 0=รับซ่อมฟรี 1=รับซ่อมคิดค่อใช้จ่าย 3=ไม่รับซ่อม
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	PromotionType SMALLINT DEFAULT 0, -- 0=ไม่คิด 1=แบบซื้อ A+B แถม C 2=แบบเป็นลำดับขั้น 3=แบบตามจำนวน
+	WTaxRate FLOAT DEFAULT 0.0, -- อัตราภาษีหัก ณ ที่จ่าย
+	WaveFile	VARCHAR(50),
+	CostType	SMALLINT DEFAULT 0,
+	OrderPoint	FLOAT DEFAULT 0.0,
+	StockMin	FLOAT DEFAULT 0.0,
+	StockMax	FLOAT DEFAULT 0.0,
+	StockQty	FLOAT DEFAULT 0.0,
+	AverageCost	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	CostOfArea	FLOAT DEFAULT 0.0,
+	LastBuyPrice	FLOAT DEFAULT 0.0,
+	StandardCost	FLOAT DEFAULT 0.0,
+	PicFileName1	VARCHAR(255),
+	PicFileName2	VARCHAR(255),
+	PicFileName3	VARCHAR(255),
+	PicFileName4	VARCHAR(255),
+	SpecFileName	VARCHAR(255),
+	AviFileName	VARCHAR(255),
+	AccGroupCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	DefBuyWHCode	VARCHAR(10),
+	DefBuyShelf	VARCHAR(15),
+	DefSaleWHCode	VARCHAR(10),
+	DefSaleShelf	VARCHAR(15),
+	DefBadWHCode	VARCHAR(10),
+	DefBadShelf	VARCHAR(15),
+	DefFGWHCode	VARCHAR(10),
+	DefFGShelf	VARCHAR(15),
+	DefRepairWHCode	VARCHAR(10),
+	DefRepairShelf	VARCHAR(15),
+	DefRawWHCode	VARCHAR(10),
+	DefRawShelf	VARCHAR(15),
+	Formula1	VARCHAR(10),
+	Formula2	VARCHAR(10),
+	Formula3	VARCHAR(10),
+	Discount	VARCHAR(35),
+	ReserveQty	FLOAT DEFAULT 0.0,
+	RemainOutQty	FLOAT DEFAULT 0.0,
+	RemainInQty	FLOAT DEFAULT 0.0,
+	BasePrice	FLOAT DEFAULT 0.0, -- ฐานคิดภาษีสินค้าพิเศษ
+	ActiveStatus	SMALLINT DEFAULT 1,-- 0 = เลิกขาย, 1= ขาย
+	CanMakePO	SMALLINT DEFAULT 0, --0 = เลิกซื้อ,1= เลิกซื้อ
+	CreatorCode	VARCHAR(10), -- พนักงานที่ Create ครั้งแรก
+	CreateDateTime	DATETIME, -- วันที่ Create ครั้งแรก
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	SalePrice1		FLOAT DEFAULT 0.0, -- กำหนดราคาขาย 
+	SalePrice2		FLOAT DEFAULT 0.0, -- กำหนดราคาขาย 
+	SalePrice3		FLOAT DEFAULT 0.0, -- กำหนดราคาขาย 
+	SalePrice4	FLOAT DEFAULT 0.0,
+	SalePrice5	FLOAT DEFAULT 0.0,
+	SalePrice6	FLOAT DEFAULT 0.0,
+	SalePrice7	FLOAT DEFAULT 0.0,
+	SalePrice8	FLOAT DEFAULT 0.0,
+	PriceVatOut1	FLOAT DEFAULT 0.0,
+	PriceVatOut2	FLOAT DEFAULT 0.0,
+	PriceVatOut3	FLOAT DEFAULT 0.0,
+	PriceVatOut4	FLOAT DEFAULT 0.0,
+	PriceVatOut5	FLOAT DEFAULT 0.0,
+	PriceVatOut6	FLOAT DEFAULT 0.0,
+	PriceVatOut7	FLOAT DEFAULT 0.0,
+	PriceVatOut8	FLOAT DEFAULT 0.0,
+	--Auto Packing Section by นก
+	DefFixUnitCode	VARCHAR(10),
+	DefFixUnitCost	FLOAT DEFAULT 0.0,
+	FixQty		FLOAT DEFAULT 0.0,
+	FixCost		FLOAT DEFAULT 0.0,
+	SalePriceNV1	FLOAT DEFAULT 0.0,
+	SalePriceNV2	FLOAT DEFAULT 0.0,
+	SalePriceNV3	FLOAT DEFAULT 0.0,
+	ProcessStatus	SMALLINT DEFAULT 0,
+	IsGift	SMALLINT DEFAULT 0,
+	PromoMember		SMALLINT DEFAULT 0,
+	PromoType	SMALLINT DEFAULT 0,
+	AverageCostReal		FLOAT DEFAULT 0.0,
+	OverReceive	FLOAT DEFAULT 0.0, -- ยอดที่รับได้ไม่เกิน
+	------Lenso Modify Project-----
+	ContainerCapacity	FLOAT DEFAULT 0.0,
+	ContainerWeight	FLOAT DEFAULT 0.0,
+	CapacityUnit	VARCHAR(20),
+	LastBuyPriceHome	FLOAT DEFAULT 0.0,--Last buy price in local currency
+	LastBuyCurrencyCode	VARCHAR(10),
+	LastAvgCost	FLOAT DEFAULT 0.0, --Last average cost
+	UserGroup VARCHAR(1000),
+	stockqty1 FLOAT DEFAULT 0.0,
+	stockqty2 FLOAT DEFAULT 0.0,
+	StockQtyWord VARCHAR(1000), -- P'Jead use -- Description Unit
+	CustGroup VARCHAR(1000),
+	PublisherCode VARCHAR(10),
+	WriterCode VARCHAR(255),
+	PrintOrdinal SMALLINT DEFAULT 1,
+	PrintYear SMALLINT,
+	LastSaleDate	DATETIME, -- วันที่ขายล่าสุด
+	LastBuyDate	DATETIME, -- วันที่ซื้อล่าสุด
+	LastSalePrice	FLOAT DEFAULT 0.0, -- ราคาขายล่าสุด
+	LastSalePriceHome	FLOAT DEFAULT 0.0, -- ราคาขายล่าสุด * Exchange Rate
+	LastSaleCurrencyCode	VARCHAR(10), -- สกุลเงินที่ขายล่าสุด
+	-------------------------end A-FOSS script----------------
+	Specification	VARCHAR(1000),	--คุณสมบัติ	 
+	ManufactoryCode	Varchar(10),	--รหัสผู้ผลิต (เพิ่ม table ด้วย***)
+	AFT_remark	VARCHAR(255),	--ใช้เฉพาะใน A-FOSS
+	UnitWeight	FLOAT	DEFAULT 0.0,	--ใช้เฉพาะใน A-FOSS
+	WeightUnitCode	Varchar(10),	--หน่วยนับของ unitWeight
+	LeadTime		varchar(60),	--ใช้เฉพาะใน A-FOSS
+	OfferedBy		VARCHAR(255),		--ใช้เฉพาะใน A-FOSS
+	OfferedDate	Datetime,
+	HS_SMX_remark	VARCHAR(255),
+	Description	VARCHAR(1000),
+	ItemBarCode VARCHAR(1000),
+--for evs project
+	PriceCode varchar(10),
+	Classfication VARCHAR(10),
+	DiscCashCard SMALLINT DEFAULT 0 -- ใช่ส่วนลดบัตรเงินสด
+    PRIMARY KEY(CODE)
+);
+
+CREATE  INDEX IDX_ITEM_NAME ON BCITEM(NAME1);
+CREATE  INDEX IDX_ITEM_STKTP	ON  BCITEM(StockType);
+CREATE  INDEX IDX_ITEM_CSTTP	ON  BCITEM(CostType);
+CREATE  INDEX IDX_ITEM_ACT	ON  BCITEM(ActiveStatus);
+
+create table BCFormula
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(255),
+	ItemCode	VARCHAR(25),
+	MyDescription	VARCHAR(1000),
+	IsConfirm	SMALLINT DEFAULT 0,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME
+    PRIMARY KEY(CODE)
+);
+
+create table BCFormulaSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10),
+	ItemCode	VARCHAR(25),
+	UnitCode	VARCHAR(10),
+	LineNumber	SMALLINT DEFAULT 0,
+	Qty	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_FMS_CODE ON  BCFormulaSub(CODE);
+CREATE  INDEX IDX_FMS_ICODE ON  BCFormulaSub(ItemCode);
+CREATE  INDEX IDX_FMS_CODE1 ON  BCFormulaSub(ItemCode,Code,UnitCode);
+
+
+-- ทะเบียนผู้จำหน่ายสินค้า
+create table BCItemSupplier
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25) NOT NULL,
+	ApCode	VARCHAR(20) NOT NULL,
+	TransportTime	SMALLINT DEFAULT 0,
+	PaymentCase	VARCHAR(1000),
+	BuyPrice	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	FightCase	VARCHAR(255),
+	LastBuyPrice	FLOAT DEFAULT 0.0,
+	LastBuyDate	DATETIME,
+	LastBuyUnitCode	VARCHAR(10),
+	PriorityIndex SMALLINT DEFAULT 0, --ลำดับความสำคัญ
+	ProStartDate	DATETIME,
+	ProStopDate	DATETIME,
+	ProBuyPrice	FLOAT DEFAULT 0.0,
+	ItemCodeSupplier	VARCHAR(25), -- รหัสสินค้าตาม Supplier
+	ItemNameSupplier	VARCHAR(1000)-- ชื่อสินค้าตาม Supplier
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITMSPCODE ON BCItemSupplier(ItemCode);
+CREATE  INDEX IDX_ITMSPAP ON BCItemSupplier(APCODE);
+CREATE  INDEX IDX_ITMSPCODE1 ON BCItemSupplier(ApCode,ItemCode,UnitCode);
+
+create table BCItemAccGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	ItemAccount	VARCHAR(20),
+	CostAccount	VARCHAR(20),
+	RevenueAccount	VARCHAR(20)
+    PRIMARY KEY(CODE)
+);
+
+
+-- ยอดคงเหลือแยกตามคลังสินค้า		
+create table BCStkWarehouse
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	UnitCode	VARCHAR(10),
+	Qty	FLOAT DEFAULT 0.0,
+	ReserveQty	FLOAT DEFAULT 0.0,
+	RemainInQty	FLOAT DEFAULT 0.0,
+	RemainOutQty	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	ItemPriority	SMALLINT DEFAULT 0, -- ลำดับความสำคัญ
+	ReadyQtyAll FLOAT DEFAULT 0.0, -- ยอดที่ขายได้
+	ReserveQtyAll FLOAT DEFAULT 0.0, -- 
+	RemainQtyAll FLOAT DEFAULT 0.0, -- 
+	RemainOutQtyAll	FLOAT DEFAULT 0.0,
+	averagecost FLOAT DEFAULT 0.0,
+	DocDate	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_WHSTKITEM ON BCStkWarehouse(ItemCode);
+CREATE  INDEX IDX_WHSTKWH ON BCStkWarehouse(WHCode);
+CREATE  INDEX IDX_WHSTKSHF ON BCStkWarehouse(ShelfCode);
+CREATE  INDEX IDX_WHSTKUNIT ON BCStkWarehouse(UnitCode);
+CREATE  INDEX IDX_WHSTKITEM1 ON BCStkWarehouse(ItemCode,UnitCode,WhCode,ShelfCode);
+CREATE  INDEX IDX_WHSTKWH2 ON BCStkWarehouse(ITEMCODE,WHCode);
+			
+create table BCLotOut
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocDate	DATETIME,
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	BillLineNumber	SMALLINT DEFAULT 0,
+	TransPeriod SMALLINT DEFAULT 0, -- ข้อมูลเกิดใน Period ที่
+	LotNumber	VARCHAR(50),
+	TransType	SMALLINT DEFAULT 0, -- ตาม MyType ของรายวันที่ตัด
+	LotQty	FLOAT DEFAULT 0.0,
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),	
+	Cost	FLOAT DEFAULT 0.0, -- ต้นทุนต่อหน่วย
+	CostOfLot	FLOAT DEFAULT 0.0 -- ยอดมูลค่า ไม่ใช่ยอดต่อหน่วย
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_LTOITEM ON BCLotOut(ItemCode);
+CREATE  INDEX IDX_LTOLINE ON BCLotOut(BillLineNumber);
+CREATE  INDEX IDX_LTOTTYP ON BCLotOut(TransType);
+CREATE  INDEX IDX_LTOITEM1 ON BCLotOut(Docno);
+CREATE  INDEX IDX_LTOITEM2 ON BCLotOut(Lotnumber);
+CREATE  INDEX IDX_LTOITEM3 ON BCLotOut(ItemCode,LotNumber);
+			
+create table BCLotMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25) NOT NULL,
+	LotNumber	VARCHAR(50) NOT NULL,
+	WHCode	VARCHAR(10) NOT NULL,
+	ShelfCode	VARCHAR(15) NOT NULL,
+	BillLineNumber	SMALLINT DEFAULT 0,
+	TransType	SMALLINT DEFAULT 0, -- ตาม MyType ของรายวันที่เพิ่ม
+	TransPeriod SMALLINT DEFAULT 0, -- ข้อมูลเกิดใน Period ที่
+	DocNo	VARCHAR(50) NOT NULL,
+	DocDate	DATETIME,
+	ExpireDate	DATETIME,
+	ProduceDate	DATETIME, -- วันที่ผลิต
+	AgeDay SMALLINT DEFAULT 0, -- อายุ(วัน)
+	MyDescription	VARCHAR(1000),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดรับครั้งแรก
+	Cost	FLOAT DEFAULT 0.0, -- ต้นทุนครั้งแรก
+	Amount	FLOAT DEFAULT 0.0 NOT NULL, -- มูลค่าครั้งแรก
+	BalAmount	FLOAT DEFAULT 0.0, -- ยอดมูลค่าคงเหลือปัจุบัน
+	BalQty	FLOAT DEFAULT 0.0, -- ยอดจำนวนคงเหลือปัจุบัน
+	BalCost	FLOAT DEFAULT 0.0, -- ต้นทุนคงเหลือปัจุบัน Jeab 1/11/2545
+	BalQtyPeriod1 FLOAT DEFAULT 0.0,
+	BalQtyPeriod2 FLOAT DEFAULT 0.0,
+	BalQtyPeriod3 FLOAT DEFAULT 0.0,
+	BalQtyPeriod4 FLOAT DEFAULT 0.0,
+	BalQtyPeriod5 FLOAT DEFAULT 0.0,
+	BalQtyPeriod6 FLOAT DEFAULT 0.0,
+	BalQtyPeriod7 FLOAT DEFAULT 0.0,
+	BalQtyPeriod8 FLOAT DEFAULT 0.0,
+	BalQtyPeriod9 FLOAT DEFAULT 0.0,
+	BalQtyPeriod10 FLOAT DEFAULT 0.0,
+	BalQtyPeriod11 FLOAT DEFAULT 0.0,
+	BalQtyPeriod12 FLOAT DEFAULT 0.0,
+	BalQtyPeriod13 FLOAT DEFAULT 0.0,
+	BalQtyPeriod14 FLOAT DEFAULT 0.0,
+	BalQtyPeriod15 FLOAT DEFAULT 0.0,
+	BalQtyPeriod16 FLOAT DEFAULT 0.0,
+	BalQtyPeriod17 FLOAT DEFAULT 0.0,
+	BalQtyPeriod18 FLOAT DEFAULT 0.0,
+	BalQtyPeriod19 FLOAT DEFAULT 0.0,
+	BalQtyPeriod20 FLOAT DEFAULT 0.0,
+	BalQtyPeriod21 FLOAT DEFAULT 0.0,
+	BalQtyPeriod22 FLOAT DEFAULT 0.0,
+	BalQtyPeriod23 FLOAT DEFAULT 0.0,
+	BalQtyPeriod24 FLOAT DEFAULT 0.0,
+	BalQtyPeriod25 FLOAT DEFAULT 0.0,
+	reflot varchar(50) -- Jum use
+    PRIMARY KEY(RowOrder)
+);
+
+CREATE  INDEX IDX_LTMLINE ON BCLotMaster(RowOrder,ItemCode,WHCode,LotNumber);
+CREATE  INDEX IDX_LTMITEM ON BCLotMaster(ItemCode);
+CREATE  INDEX IDX_LTMITEM2 ON BCLotMaster(ItemCode,WHCode,LotNumber);
+
+--CREATE  INDEX IDX_LTMLINE ON BCLotMaster(BillLineNumber);
+--CREATE  INDEX IDX_LTMITEM ON BCLotMaster(ItemCode);
+--CREATE  INDEX IDX_LTMTTYP ON BCLotMaster(TransType);
+			
+-- การเบิกใช้สินค้า	
+create table BCStkIssue
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	IssueType	VARCHAR(10),
+	DayOfUse	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	PersonCode	VARCHAR(10),
+	ArCode VARCHAR(20),
+	SumOfAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	BillRetStatus SMALLINT DEFAULT 0, -- 1=หมดแล้ว
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	isReward smallint default 0,
+	memberPoint FLOAT DEFAULT 0.00	
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_STKISS_REC ON BCStkIssue(RecurName);
+CREATE  INDEX IDX_STKISS_DATE ON BCStkIssue(DocDate);
+CREATE  INDEX IDX_STKISS_REC1 ON BCStkIssue(Docno,ArCode);
+CREATE INDEX IDX_STKISS_PNTC ON BCStkIssue(PrintCount);
+
+create table BCStkIssueSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 8, -- เบิก
+	DocNo	VARCHAR(20),
+	IssueType	VARCHAR(10),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	Personcode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	RefNo	VARCHAR(20), -- เลขที่ใบขอเบิก
+	Qty	FLOAT DEFAULT 0.0,
+	RetQty	FLOAT DEFAULT 0.0,
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	Price	FLOAT DEFAULT 0.0, -- ราคาขาย/หน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าสินค้า
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST FLOAT DEFAULT 0.0,
+	RefLineNumber SMALLINT DEFAULT 0, --jum 15-02-2003
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0,
+	ItemSetCode varchar(25)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKISDATE ON BCStkIssueSub(DOCDATE);
+CREATE  INDEX IDX_STKISITEM ON BCStkIssueSub(ItemCode);
+CREATE  INDEX IDX_STKISWH ON BCStkIssueSub(WHCode);
+CREATE  INDEX IDX_STKISSHF ON BCStkIssueSub(ShelfCode);
+CREATE  INDEX IDX_STKISTYPE ON BCStkIssueSub(MyType);
+CREATE  INDEX IDX_STKISIND ON BCStkIssueSub(BehindIndex);
+CREATE  INDEX IDX_STKISTS ON BCStkIssueSub(TransState);
+CREATE  INDEX IDX_STKISIST ON BCStkIssueSub(IssueType);
+CREATE  INDEX IDX_STKISSUE1 ON BCStkIssueSub(ItemCode,UnitCode,Whcode,ShelfCode,Linenumber);
+CREATE  INDEX IDX_STKISSUE2 ON BCStkIssueSub(Linenumber);
+CREATE  INDEX IDX_STKISSUESERVICE ON BCStkIssueSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_STKISPAK1 ON BCStkIssueSub(PackingRate1);
+CREATE  INDEX IDX_STKISPAK2 ON BCStkIssueSub(PackingRate2);
+
+create table BCStkIssue2 -- ใบขอเบิก
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	ArCode VARCHAR(20),
+	IssueType	VARCHAR(10),
+	DayOfUse	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	PersonCode	VARCHAR(10),
+	SumOfAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่หมด 1=ตัดหมดแล้ว
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	IsImport SMALLINT DEFAULT 0 -- 1= ข้อมูลที่ Import เข้ามา
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_STKISS2_REC ON BCStkIssue2(RecurName);
+CREATE  INDEX IDX_STKISS2_DATE ON BCStkIssue2(DocDate);
+CREATE  INDEX IDX_STKISSUE2_AR ON BCStkIssue2(ArCode);
+CREATE  INDEX IDX_STKISSUE2_PNTC ON BCStkIssue2(printcount);
+
+
+create table BCStkIssueSub2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	IssueType	VARCHAR(10),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	Personcode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	IssQty	FLOAT DEFAULT 0.0,--Not use change to remain qty
+	RemainQty FLOAT DEFAULT 0.0,
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	Price	FLOAT DEFAULT 0.0, -- ราคาขาย/หน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าสินค้า
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ColorCode	VARCHAR(10),
+	SizeCode	VARCHAR(10),
+	StyleCode	VARCHAR(10),
+	LineNumber	SMALLINT,
+	ItemSetCode varchar(25)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKIS2DATE ON BCStkIssueSub2(DOCDATE);
+CREATE  INDEX IDX_STKIS2ITEM ON BCStkIssueSub2(ItemCode);
+CREATE  INDEX IDX_STKIS2WH ON BCStkIssueSub2(WHCode);
+CREATE  INDEX IDX_STKIS2SHF ON BCStkIssueSub2(ShelfCode);
+CREATE  INDEX IDX_STKIS2TS ON BCStkIssueSub2(TransState);
+CREATE  INDEX IDX_STKIS2IST ON BCStkIssueSub2(IssueType);
+CREATE  INDEX IDX_STKISSUE21 ON BCStkIssueSub2(ItemCode,UnitCode,Whcode,ShelfCode,Linenumber);
+CREATE  INDEX IDX_STKISSUE22 ON BCStkIssueSub2(Linenumber);
+
+			
+-- การรับคืนจากเบิกใช้สินค้า
+create table BCStkIssueRet
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	IssueRefNo	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	PersonCode	VARCHAR(10),
+	SumOfAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(1000),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_STKISRDATE ON BCStkIssueRet(DocDate);
+CREATE  INDEX IDX_STKISRDEP ON BCStkIssueRet(DepartCode);
+CREATE  INDEX IDX_STKISRPER ON BCStkIssueRet(PersonCode);
+CREATE  INDEX IDX_STKISRREC ON BCStkIssueRet(RecurName);
+CREATE INDEX IDX_STKISPNTC ON BCStkIssueRet(PrintCount);
+
+create table BCStkIssRetSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 9,
+	DocNo	VARCHAR(20),
+	IssueRefNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	Personcode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0, -- ราคาขาย/หน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าสินค้า
+	HomeAmount	FLOAT	DEFAULT 0.0, -- ยอดรับเงินเป็นเงินบาท
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BarCode	VARCHAR(20),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	RefLinenumber SMALLINT,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	ReturnCost FLOAT DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKISRSDATE ON BCStkIssRetSub(DOCDATE);
+CREATE  INDEX IDX_STKISRSITEM ON BCStkIssRetSub(ItemCode);
+CREATE  INDEX IDX_STKISRSWH ON BCStkIssRetSub(WHCode);
+CREATE  INDEX IDX_STKISRSSHF ON BCStkIssRetSub(ShelfCode);
+CREATE  INDEX IDX_STKISRSTYPE ON BCStkIssRetSub(MyType);
+CREATE  INDEX IDX_STKISRSIND ON BCStkIssRetSub(BehindIndex);
+CREATE  INDEX IDX_STKISRSTS ON BCStkIssRetSub(TransState);
+CREATE  INDEX IDX_STKISRS1 ON BCStkIssRetSub(ItemCode,UnitCode,Whcode,ShelfCode,Linenumber);
+CREATE  INDEX IDX_STKISRS2 ON BCStkIssRetSub(Linenumber);
+CREATE  INDEX IDX_STKISPAK1 ON BCStkIssRetSub(PackingRate1);
+CREATE  INDEX IDX_STKISPAK2 ON BCStkIssRetSub(PackingRate2);
+			
+create table BCStkBalance
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	IsConfirm	SMALLINT DEFAULT 0,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumOfAmount	FLOAT DEFAULT 0.0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_STKBAL1 ON BCStkBalance(DOCDATE);
+CREATE  INDEX IDX_STKPNTC ON BCStkBalance(printcount);
+
+create table BCStkBalanceSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 0,
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Cost	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	--Auto Packing Section by นก
+	FixUnitCost	FLOAT DEFAULT 0.0,
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+	SumOfCost	FLOAT DEFAULT 0.0, --aom 2003-05-22
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	CategoryCode VARCHAR(10),
+	GroupCode VARCHAR(10),
+	BrandCode VARCHAR(10),
+	TypeCode VARCHAR(10),
+	FormatCode VARCHAR(10),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITMBDATE ON BCStkBalanceSub(DOCDATE);
+CREATE  INDEX IDX_ITMBITEM ON BCStkBalanceSub(ItemCode);
+CREATE  INDEX IDX_ITMBWH ON BCStkBalanceSub(WHCode);
+CREATE  INDEX IDX_ITMBSHF ON BCStkBalanceSub(ShelfCode);
+CREATE  INDEX IDX_ITMBTYPE ON BCStkBalanceSub(MyType);
+CREATE  INDEX IDX_ITMBIND ON BCStkBalanceSub(BehindIndex);
+CREATE  INDEX IDX_ITMBTS	ON BCStkBalanceSub(TransState);
+CREATE  INDEX IDX_ITMBS1 ON BCStkBalanceSub(ItemCode,UnitCode,Whcode,ShelfCode,Linenumber);
+CREATE  INDEX IDX_ITMBS2 ON BCStkBalanceSub(Linenumber);
+CREATE  INDEX IDX_ITMBS3 ON BCStkBalanceSub(Docno,ItemCode);
+CREATE  INDEX IDX_ITMBSERVICE ON BCStkBalanceSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_ITMBPAK1 ON BCStkBalanceSub(PackingRate1);
+CREATE  INDEX IDX_ITMBPAK2 ON BCStkBalanceSub(PackingRate2);
+-- Finish Goods
+create table BCFinishGoods
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	PersonCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumOfAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	SumOfCost	FLOAT DEFAULT 0.0, --aom 2003-05-22
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_FG_REC ON BCFinishGoods(RecurName);
+CREATE  INDEX IDX_FG_DATE ON BCFinishGoods(DocDate);
+CREATE  INDEX IDX_FG_PNTC ON BCFinishGoods(printcount);
+
+create table BCFinishGoodsSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 1, 
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	Personcode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Cost	FLOAT DEFAULT 0.0,
+	SumOfCost	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	--Auto Packing Section by นก
+	FixUnitCost	FLOAT DEFAULT 0.0,
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25	
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_FGSNO ON BCFinishGoodsSub(DocNo);
+CREATE  INDEX IDX_FGSDATE ON BCFinishGoodsSub(DOCDATE);
+CREATE  INDEX IDX_FGSITEM ON BCFinishGoodsSub(ItemCode);
+CREATE  INDEX IDX_FGSWH ON BCFinishGoodsSub(WHCode);
+CREATE  INDEX IDX_FGSSHF ON BCFinishGoodsSub(ShelfCode);
+CREATE  INDEX IDX_FGSTYPE ON BCFinishGoodsSub(MyType);	
+CREATE  INDEX IDX_FGSIND ON BCFinishGoodsSub(BehindIndex);
+CREATE  INDEX IDX_FGSTS ON BCFinishGoodsSub(TransState);	
+CREATE  INDEX IDX_FGSSERVICE ON BCFinishGoodsSub(DocDate,ItemCode,BehindIndex);	
+CREATE  INDEX IDX_FGSPAK1 ON BCFinishGoodsSub(PackingRate1);	
+CREATE  INDEX IDX_FGSPAK2 ON BCFinishGoodsSub(PackingRate2);	
+
+--*****
+create table BCStkTransfer
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	IsConfirm	SMALLINT DEFAULT 0,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumOfQty	FLOAT DEFAULT 0.0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	RecurName	VARCHAR(40),
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME,
+	SumOfAmount FLOAT default 0.0
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_STKTR1 ON BCStkTransfer(DocDate);
+CREATE  INDEX IDX_STKPNTC ON BCStkTransfer(printcount);
+
+create table BCStkTransfSub3 -- สำหรับใช้ในรายงาน โดยจะแบ่ง record ของการโอนออกจากกัน เป็น โอนออก 1 Rec โอนเข้า 1 Rec
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 12, -- 12=โอนเข้า,13=โอนออก
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0, -- ราคาขายสินค้า
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าตามราคาขาย
+	RefNo	VARCHAR(20), -- เลขที่ใบขอโอน
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	fromwhcode varchar(10),-- Jum use
+	fromshelfcode varchar(10), -- Jum use
+	reftrlinenum smallint,
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsCancel	SMALLINT DEFAULT 0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKTRS3_1 ON BCStkTransfSub3(ItemCode,UnitCode,Whcode,ShelfCode);
+CREATE  INDEX IDX_STKTRS3_2 ON BCStkTransfSub3(ItemCode,UnitCode);
+CREATE  INDEX IDX_STKTRS_NOITEM ON BCStkTransfSub3(Docno,ItemCode);
+CREATE  INDEX IDX_STKTRS_DOCNO ON BCStkTransfSub3(Docno);
+CREATE  INDEX IDX_STKTRS_ITEM ON BCStkTransfSub3(ItemCode);
+CREATE  INDEX IDX_STKTRS_SERVICE ON BCStkTransfSub3(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_STKTRSPAK1 ON BCStkTransfSub3(PackingRate1);
+CREATE  INDEX IDX_STKTRSPAK2 ON BCStkTransfSub3(PackingRate2);
+
+create table BCStkTransfSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	FromWH	VARCHAR(10),
+	FromShelf	VARCHAR(15),
+	ToWH	VARCHAR(10),
+	ToShelf	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0, -- ราคาขายสินค้า
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าตามราคาขาย
+	RefNo	VARCHAR(20), -- เลขที่ใบขอโอน
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	RefLineNumber	SMALLINT,
+	LotOutNumber	VARCHAR(50), -- Jeab 2003-04-26 Lot กำหนดเอง
+	LotInNumber	VARCHAR(50),-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	BehindIndex	SMALLINT DEFAULT 1
+    PRIMARY KEY(ROWORDER)
+);
+			
+CREATE  INDEX IDX_STKTSDATE ON BCStkTransfSub(DOCDATE);
+CREATE  INDEX IDX_STKTSITEM ON BCStkTransfSub(ItemCode);
+CREATE  INDEX IDX_STKTSWHT ON BCStkTransfSub(ToWH);
+CREATE  INDEX IDX_STKTSWHF ON BCStkTransfSub(FromWH);
+CREATE  INDEX IDX_STKTSTSHF ON BCStkTransfSub(ToShelf);
+CREATE  INDEX IDX_STKTSFSHF ON BCStkTransfSub(FromShelf);
+CREATE  INDEX IDX_STKTSUNITITEM ON BCStkTransfSub(ItemCode,UnitCode,FromWh,FromShelf,Linenumber);
+CREATE  INDEX IDX_STKTSLINE ON BCStkTransfSub(Linenumber);
+CREATE  INDEX IDX_STKTSNOITEM ON BCStkTransfSub(Docno,ItemCode);
+CREATE  INDEX IDX_STKTSDOCNO ON BCStkTransfSub(Docno);
+
+
+create table BCStkTransfer2 -- ใบขอโอนสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	IsConfirm	SMALLINT DEFAULT 0,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumOfQty	FLOAT DEFAULT 0.0,
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่หมด 1=ตัดหมดแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME,
+	SumOfAmount FLOAT default 0.0
+    PRIMARY KEY(DocNo)
+);
+
+create table BCStkTransfSub2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	FromWH	VARCHAR(10),
+	FromShelf	VARCHAR(15),
+	ToWH	VARCHAR(10),
+	ToShelf	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0, -- ราคาขายสินค้า
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าตามราคาขาย
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT,
+	--support color,size,style
+	Colorcode VARCHAR(10),
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10)	
+    PRIMARY KEY(ROWORDER)
+);
+			
+CREATE  INDEX IDX_STKSTDATE ON BCStkTransfSub2(DOCDATE);
+CREATE  INDEX IDX_STKSTITEM ON BCStkTransfSub2(ItemCode);
+CREATE  INDEX IDX_STKSTWHT ON BCStkTransfSub2(ToWH);
+CREATE  INDEX IDX_STKSTWHF ON BCStkTransfSub2(FromWH);
+CREATE  INDEX IDX_STKSTSHFT ON BCStkTransfSub2(ToShelf);
+CREATE  INDEX IDX_STKSTSHFF ON BCStkTransfSub2(FromShelf);
+CREATE  INDEX IDX_STKSTUNITITEM ON BCStkTransfSub2(ItemCode,UnitCode,FromWh,FromShelf,Linenumber);
+CREATE  INDEX IDX_STKSTLINE ON BCStkTransfSub2(Linenumber);
+CREATE  INDEX IDX_STKSTNOITEM ON BCStkTransfSub2(Docno,ItemCode);
+CREATE  INDEX IDX_STKSTDOCNO ON BCStkTransfSub2(Docno);
+
+create table BCBarCodeMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Barcode	VARCHAR(20),
+	BarcodeName	VARCHAR(1000), -- ชื่อ Barcode
+	ItemCode	VARCHAR(25),
+	Remark	VARCHAR(1000),
+	ActiveStatus	SMALLINT DEFAULT 1,
+	UnitCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  UNIQUE INDEX IDX_BARCODE ON BCBarCodeMaster(Barcode);
+CREATE  INDEX IDX_BARITEM ON BCBarCodeMaster(ItemCode);
+			
+create table BCStkPacking
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	Rate	FLOAT DEFAULT 1.0,
+	UnitCode	VARCHAR(10),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือปัจจุบัน
+	BalQtyPeriod1 FLOAT DEFAULT 0.0, -- ยอดตาม Period
+	BalQtyPeriod2 FLOAT DEFAULT 0.0,
+	BalQtyPeriod3 FLOAT DEFAULT 0.0,
+	BalQtyPeriod4 FLOAT DEFAULT 0.0,
+	BalQtyPeriod5 FLOAT DEFAULT 0.0,
+	BalQtyPeriod6 FLOAT DEFAULT 0.0,
+	BalQtyPeriod7 FLOAT DEFAULT 0.0,
+	BalQtyPeriod8 FLOAT DEFAULT 0.0,
+	BalQtyPeriod9 FLOAT DEFAULT 0.0,
+	BalQtyPeriod10 FLOAT DEFAULT 0.0,
+	BalQtyPeriod11 FLOAT DEFAULT 0.0,
+	BalQtyPeriod12 FLOAT DEFAULT 0.0,
+	BalQtyPeriod13 FLOAT DEFAULT 0.0, -- เผื่อไว้
+	BalQtyPeriod14 FLOAT DEFAULT 0.0,
+	BalQtyPeriod15 FLOAT DEFAULT 0.0,
+	BalQtyPeriod16 FLOAT DEFAULT 0.0,
+	BalQtyPeriod17 FLOAT DEFAULT 0.0,
+	BalQtyPeriod18 FLOAT DEFAULT 0.0,
+	BalQtyPeriod19 FLOAT DEFAULT 0.0,
+	BalQtyPeriod20 FLOAT DEFAULT 0.0,
+	BalQtyPeriod21 FLOAT DEFAULT 0.0,
+	BalQtyPeriod22 FLOAT DEFAULT 0.0,
+	BalQtyPeriod23 FLOAT DEFAULT 0.0,
+	BalQtyPeriod24 FLOAT DEFAULT 0.0,
+	BalQtyPeriod25 FLOAT DEFAULT 0.0,
+	--Auto Packing by นก
+	Rate1 	FLOAT DEFAULT 0.0,
+	Rate2 	FLOAT DEFAULT 0.0,
+	Running  	SMALLINT DEFAULT 0,
+	Runner	SMALLINT DEFAULT 0,
+	UseFlag 	SMALLINT DEFAULT 1,	
+	UseForm 	SMALLINT DEFAULT 0 -- 0 = ไม่ใช่ในการออก Form, 1= ใช้ในการออก Form
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PACKITEM ON BCStkPacking(ItemCode);
+CREATE  INDEX IDX_PACKUNIT ON BCStkPacking(UNITCODE);
+	
+create table BCPromoPrice
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	UnitCode VARCHAR(10),
+	TaxType	SMALLINT DEFAULT 0, -- 0=แยกนอก 1=รวมใน
+	FromQty	FLOAT DEFAULT 0.0,
+	ToQty	FLOAT DEFAULT 0.0,
+	SalePrice	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	FromDate	DATETIME,
+	ToDate	DATETIME,
+	FromARGroup	VARCHAR(10),
+	ToARGroup	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_PROMOUNIT ON BCPromoPrice(ItemCode,UnitCode);
+CREATE  INDEX IDX_PROITEM ON BCPromoPrice(ItemCode);
+CREATE  INDEX IDX_PROFQTY ON BCPromoPrice(FromQty);
+CREATE  INDEX IDX_PROTQTY ON BCPromoPrice(ToQty);
+CREATE  INDEX IDX_PROFDATE ON BCPromoPrice(FromDate);
+CREATE  INDEX IDX_PROTDATE ON BCPromoPrice(ToDate);
+CREATE  INDEX IDX_PROUNIT ON BCPromoPrice(UnitCode);
+CREATE  INDEX IDX_PROFARG ON BCPromoPrice(FromARGroup);
+CREATE  INDEX IDX_PROTARG ON BCPromoPrice(ToARGroup);
+
+
+create table BCPriceList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	UnitCode VARCHAR(10),
+	Remark	VARCHAR(255),
+	TaxType	SMALLINT DEFAULT 0, -- 0=แยกนอก 1=รวมใน
+	FromQty	FLOAT DEFAULT 0.0,
+	ToQty	FLOAT DEFAULT 0.0,
+	StartDate DATETIME, -- จากวันที่
+	StopDate DATETIME, -- ถึงวันที่
+	SaleType SMALLINT DEFAULT 0, -- ประเภทการขาย
+	TransportType SMALLINT DEFAULT 0, -- เงื่อนการขนส่ง
+	SalePrice1	FLOAT DEFAULT 0.0,
+	SalePrice2	FLOAT DEFAULT 0.0,
+	SalePrice3	FLOAT DEFAULT 0.0,
+	SalePrice4	FLOAT DEFAULT 0.0,
+	SalePrice5	FLOAT DEFAULT 0.0,
+	SalePrice6	FLOAT DEFAULT 0.0,
+	SalePrice7	FLOAT DEFAULT 0.0,
+	SalePrice8	FLOAT DEFAULT 0.0,
+	LowPrice	FLOAT DEFAULT 0.0, --- Jeab 04/11/2002 --- ราคาขายขั้นต่ำ ---
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PRLITEM ON BCPriceList(ItemCode);
+CREATE  INDEX IDX_PRLFQTY ON BCPriceList(FromQty);
+CREATE  INDEX IDX_PRLTQTY ON BCPriceList(ToQty);
+CREATE  INDEX IDX_PRLUNIT ON BCPriceList(UnitCode);
+CREATE  INDEX IDX_PRL1    ON BCPriceList(ItemCode,UnitCode);
+
+create table BCPriceList2 -- โครงสร้างราคาสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	UnitCode VARCHAR(10), -- หน่วยนับ
+	StartQty FLOAT DEFAULT 0.0, -- จากจำนวน
+	StopQty FLOAT DEFAULT 0.0,-- ถึงจำนวน
+	StartDate DATETIME, -- จากวันที่
+	StopDate DATETIME, -- ถึงวันที่
+	SaleType SMALLINT DEFAULT 0, -- ประเภทการขาย
+	TransportType SMALLINT DEFAULT 0, -- เงื่อนการขนส่ง
+	SalePrice1	VARCHAR(50),
+	SalePrice2	VARCHAR(50),
+	SalePrice3	VARCHAR(50),
+	SalePrice4	VARCHAR(50),
+	SalePrice5	VARCHAR(50),
+	SalePrice6	VARCHAR(50),
+	SalePrice7	VARCHAR(50),
+	SalePrice8	VARCHAR(50),
+	TaxType	SMALLINT DEFAULT 0, -- 0=แยกนอก 1=รวมใน
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_PRLTITEM ON BCPriceList2(ItemCode);
+CREATE  INDEX IDX_PRLTFQTY ON BCPriceList2(StartQty);
+CREATE  INDEX IDX_PRLTTQTY ON BCPriceList2(StopQty);
+CREATE  INDEX IDX_PRLTUNIT ON BCPriceList2(UnitCode);
+CREATE  INDEX IDX_PRLTITEMUNIT    ON BCPriceList2(ItemCode,UnitCode);
+
+
+		
+create table BCSerialPrintForm -- kher
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	DocNo	VARCHAR(20),
+	SaveFrom SMALLINT DEFAULT 0, -- MyType
+	SerialText VARCHAR(1000),
+	ItemLineNumber SMALLINT DEFAULT 0,
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_SPFDOCNO ON BCSerialPrintForm(DocNo);
+CREATE  INDEX IDX_SPFITEM  ON BCSerialPrintForm(ItemCode);
+
+create table BCSerialTrans
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	CtrlNo	VARCHAR(35),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DocNo	VARCHAR(20),
+	ShelfCode	VARCHAR(15),
+	WHCode	VARCHAR(10),
+	SerialNo	VARCHAR(35),
+	SaveFrom SMALLINT DEFAULT 0, -- MyType
+	ItemLineNumber SMALLINT DEFAULT 0,
+	LineNumber SMALLINT DEFAULT 0,
+	BehindIndex	SMALLINT DEFAULT 1
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_SERT_CTRL ON BCSerialTrans(CtrlNo);
+CREATE  INDEX IDX_SERT_ITEM ON BCSerialTrans(ItemCode);
+CREATE  INDEX IDX_SERT_SF ON BCSerialTrans(SaveFrom);
+CREATE  INDEX IDX_SERT_ILINE ON BCSerialTrans(ItemLineNumber);
+CREATE  INDEX IDX_SERT_LINE ON BCSerialTrans(LineNumber);
+CREATE  INDEX IDX_SERT_1    ON BCSerialTrans(DocNo);
+CREATE  INDEX IDX_SERT_2    ON BCSerialTrans(ItemCode,WHCode,SHelfCode);
+
+create table BCSerialMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	CtrlNo	VARCHAR(35) NOT NULL,
+	Model	VARCHAR(35),
+	CaseNo	VARCHAR(35),
+	CasePosition	VARCHAR(35),
+	ItemCode	VARCHAR(25),
+	ItemColor	VARCHAR(30),
+	ItemRemark	VARCHAR(1000),
+	StopInsureDate	DATETIME,
+	ReceiveDate	DATETIME,
+	ReceiveMan	VARCHAR(10),
+	ReceiveDocNo	VARCHAR(20),
+	ApCode	VARCHAR(20),
+ 	SaleDate	DATETIME,
+	SaleMan	VARCHAR(10),
+	SaleDocNo	VARCHAR(20),
+	CNSaleCode	VARCHAR(10),
+	CNDocNo		VARCHAR(20),
+	ArCode	VARCHAR(20),
+	ItemStatus	SMALLINT DEFAULT 0, -- 0=ใหม่ 1=เก่า 2=ไฟแนนท์
+	SerialNo	VARCHAR(35),
+	SerialPosition	VARCHAR(35),
+	PictureName	VARCHAR(255),
+	RegisterNo	VARCHAR(35),
+	RegisDate DATETIME,
+	Price	FLOAT DEFAULT 0.0,
+	StockStatus	SMALLINT DEFAULT 0, -- 0=อยู่ในสต็อก  1=เบิกใช้ 2=ขาย
+	ShelfCode	VARCHAR(15),
+	WHCode	VARCHAR(10),
+	ActiveStatus	SMALLINT DEFAULT 1,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	LastEditDateT	DATETIME
+    PRIMARY KEY(CtrlNo)
+);
+
+CREATE  INDEX IDX_SERITEM ON BCSerialMaster(ItemCode);
+CREATE  INDEX IDX_SER2 ON BCSerialMaster(ApCode);
+CREATE  INDEX IDX_SER3 ON BCSerialMaster(ArCode);
+CREATE  INDEX IDX_SER4 ON BCSerialMaster(ItemCode,SerialNo);
+CREATE  INDEX IDX_SER5 ON BCSerialMaster(ItemCode,CtrlNo);
+CREATE  INDEX IDX_SER6 ON BCSerialMaster(ItemCode,RegisterNo);
+CREATE  INDEX IDX_SER7 ON BCSerialMaster(ItemCode,WHCode);
+
+create table BCDeliveryAddr
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ArCode	VARCHAR(20) NOT NULL,
+	Code	VARCHAR(10) NOT NULL,
+	Address	VARCHAR(1000),
+	Telephone	VARCHAR(30),
+	Contact	VARCHAR(10),
+	Transport	VARCHAR(10),
+	DefaultStatus	SMALLINT,
+	MyDescription	VARCHAR(255),
+	TransportRemark VARCHAR(255),
+	MapCode	VARCHAR(10),
+	MapPosition_X	SMALLINT	DEFAULT  0,
+	MapPosition_Y	SMALLINT	DEFAULT 0,
+--for address by aom
+	companyname VARCHAR(255),
+	deliisdefault SMALLINT DEFAULT 0,
+	delirestype VARCHAR(255),
+	delino varchar(10),
+	delimoo varchar(10),
+	delivillage VARCHAR(255),
+	delibuilding VARCHAR(255),
+	delifloor varchar(10),
+	deliroom varchar(10),
+	delisoi VARCHAR(255),
+	deliroad VARCHAR(255),
+	delisubdist VARCHAR(255),
+	delidistrict VARCHAR(255),
+	deliprovince VARCHAR(255),
+	delicountry VARCHAR(255),
+	delizipcode varchar(10),
+	provincecode varchar(10)
+    PRIMARY KEY(ArCode,Code)
+);
+
+CREATE  INDEX IDX_DVA_AR ON BCDeliveryAddr(ArCode);
+CREATE  INDEX IDX_DVA_CODE ON BCDeliveryAddr(Code);
+
+create table BCRecFLOAT
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PayAmount	FLOAT	DEFAULT 0.0,
+	HomeAmount	FLOAT	DEFAULT 0.0, -- ยอดรับเงินเป็นเงินบาท
+	ChqTotalAmount	FLOAT	DEFAULT 0.0,
+	PaymentType	SMALLINT DEFAULT 0, --0=เงินสด 1=บัตร 2=เช็ค 3=เงินโอน 4=เงินสดย่อย 5=เงินเกินพัก 6=เงินเกินหัก 7=รายได้อื่นๆ 8=ค่าใช้จ่ายอื่นๆ
+	SaveFrom SMALLINT DEFAULT 0,
+	PayChqState	SMALLINT DEFAULT 0, -- 0=เช็คใบใหม่ 1=ตัดจากเช็คใบเดิม 
+	CreditType VARCHAR(10), -- ประเภทบัติเครดิต  
+	ChargeAmount FLOAT	DEFAULT 0.0, --เครดิต charge
+	ChargeWord VARCHAR(40), 
+	ConfirmNo VARCHAR(30), -- เลขที่อนุมัติ
+	LineNumber SMALLINT DEFAULT 0,
+	RefNo	VARCHAR(30),
+	BankCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	TransBankDate DATETIME,
+	MyDescription	VARCHAR(255),
+	RefDate	DATETIME,
+	ChangeAmount FLOAT DEFAULT 0.0 -- ยอดเงินทอน เฉพาะเงินสด
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_RECM_DATE ON BCRecFLOAT(DocDate);
+CREATE  INDEX IDX_RECM_AR ON BCRecFLOAT(ArCode);
+CREATE  INDEX IDX_RECM_PTY ON BCRecFLOAT(PaymentType);
+
+create table BCInvCreditNote
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	CreditNoteNo	VARCHAR(20), -- เลขที่ใบลดหนี้
+	ReturnFLOAT	SMALLINT	DEFAULT 0, -- 0=ไม่ 1=รับคืนเงินสด
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่ตัดยอด 1=ตัดยอดทันที
+	InvoiceNo	VARCHAR(20),	-- เลขที่ Invoice ที่จะลด
+	InvoiceDisc	VARCHAR(40),	-- ส่วนลดเดิม
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	OldAmount FLOAT DEFAULT 0.0, -- ยอดเดิม
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	DiscountAmount FLOAT DEFAULT 0.0, -- ยอดที่ลด
+	DiffAmount	FLOAT DEFAULT 0.0,	-- ยอดผลต่าง,ยอดที่จะลด เป็นรวมใน
+	ZeroTaxAmount	FLOAT DEFAULT 0.0, -- รวมยอดภาษีอัตรา 0
+	ExceptTaxAmount	FLOAT DEFAULT 0.0, --รวมยอดยกเว้นภาษี
+	TrueAmount	FLOAT DEFAULT 0.0,	-- ยอดที่ถูกต้อง OldAmount -DiffAmount-ZeroTaxAmount-ExceptTaxAmount
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * DiffAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * DiffAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0,  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	BillType	SMALLINT DEFAULT 0, -- 0=ใบส่งของ 1=เอกสารยกมา 2=ตั้งลูกหนี้อื่นๆ 3=ใบรับเงินมัดจำ
+	Custgroupcode varchar(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_INVCN_DATE ON BCInvCreditNote(DocDate);
+CREATE  INDEX IDX_INVCN_AR ON BCInvCreditNote(ArCode);
+CREATE  INDEX IDX_INVCN_NO ON BCInvCreditNote(CreditNoteNo);
+CREATE  INDEX IDX_INVCN_INV ON BCInvCreditNote(InvoiceNo);
+CREATE  INDEX IDX_INVCN1 ON BCInvCreditNote(InvoiceNo,ArCode);
+CREATE  INDEX IDX_INVCN2 ON BCInvCreditNote(CreditNoteNo,ArCode);
+
+create table BCCNMaster -- สาเหตุการลดหนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(255) NOT NULL,
+	DocType smallint NOT NULL,--default document type
+	Remark VARCHAR(1000) 
+    PRIMARY KEY(CODE)
+);
+
+create table BCCreditNote
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	TaxDate	DATETIME,
+	DocDate	DATETIME,
+	DueDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	CashierCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	SumOldAmount	FLOAT DEFAULT 0.0, -- รวมใบกำกับเดิม (เป็นเงินบาทตาม Rate ใหม่)
+	SumTrueAmount	FLOAT DEFAULT 0.0, -- รวมยอดที่ถูกต้อง (เป็นเงินบาท)
+	SumofDiffAmount	FLOAT DEFAULT 0.0, -- รวมผลต่าง เป็นรวมใน / ยอดลดหนี้
+	DiscountWord VARCHAR(30), -- ส่วนลดรับคืน
+	DiscountAmount FLOAT DEFAULT 0.0,  -- ส่วนลดรับคืน
+	SumofBeforeTax	FLOAT DEFAULT 0.0,  -- ยอดก่อนภาษี
+	SumOfTaxAmount	FLOAT DEFAULT 0.0, -- ยอดภาษี
+	SumOfTotalTax	FLOAT DEFAULT 0.0,  -- ยอดรวมภาษี
+	SumOfZeroTax FLOAT DEFAULT 0.0,
+	SumOfExceptTax	FLOAT DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0, -- ยอดสุทธิ SumOfTotalTax + SumOfExceptTax
+	SumExchangeProfit	FLOAT DEFAULT 0.0,  -- รวมกำไร(ขาดทุน)
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other	
+	DebtLimitState SMALLINT DEFAULT 0, -- 1=คืนวงเงิน 0=ไม่คืนวงเงิน
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	ReturnFLOAT	SMALLINT	DEFAULT 0, -- ไม่กระทบต่อยอดลูกหนี้ 0=ไม่ 1=รับคืนเงินสด
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่ลดยอดใบกำกับเดิม 1=ลดยอดใบกำกับเดิม
+	ReturnCash	SMALLINT	DEFAULT 0, -- 0=ไม่ลดหนี้เงินสด 1=ลดหนี้เงินสด
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย
+	PayBillStatus	SMALLINT	DEFAULT 0,
+	IsCNDeposit	SMALLINT DEFAULT 0, -- 1= ใบลดหนี้รับเงินมัดจำ
+	IsPos SMALLINT DEFAULT 0, -- 0=ทั่วไป 1=POS
+	PosDocNo VARCHAR(20), -- เลขที่ POS ที่อ้างอิงถึง
+	CauseCode VARCHAR(10), -- สาเหตุการลดหนี้
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	CustGroupCode	VARCHAR(10),
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	--for EVS project
+	InvoiceType VARCHAR(10),
+	QtyAmount FLOAT DEFAULT 0.0,
+	QtyDefault SMALLINT DEFAULT 1,
+	QtyCopy SMALLINT DEFAULT 1,
+	MergeItem SMALLINT DEFAULT 1,
+	Newline SMALLINT DEFAULT 1,
+	PriceCopy SMALLINT DEFAULT 0,
+	WHCopy SMALLINT DEFAULT 0,
+	CalcTaxFlag SMALLINT DEFAULT 0,
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000), --วิธีการชำระเงิน 2	
+	SaleAreaCode varchar(10)	
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_CN_DATE ON BCCreditNote(DocDate);
+CREATE  INDEX IDX_CN_AR ON BCCreditNote(ArCode);
+CREATE  INDEX IDX_CN_PBS ON BCCreditNote(PayBillStatus);
+CREATE  INDEX IDX_CN_BAL ON BCCreditNote(BillBalance);
+CREATE  INDEX IDX_CN_ROW ON BCCreditNote(ROWORDER);
+CREATE  INDEX IDX_CN_ARDATE ON BCCreditNote(ArCode,DocDate);
+CREATE  INDEX IDX_CN_ARNO ON BCCreditNote(ArCode,DocNo);
+CREATE INDEX IDX_CN_PNTC ON BCCreditNote(PrintCount);
+
+create table BCCreditNoteSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 5,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	CashierCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	DiscQty	FLOAT DEFAULT 0.0,
+	TempQty	FLOAT DEFAULT 0.0, -- ยอดส่งคืนตามที่ Key ไม่มีผลอะไร
+	BillQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนทั้งสิ้น ไม่ใช่ต้นทุนต่อหน่วย
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	InvoiceNo	VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	IsPos SMALLINT DEFAULT 0, -- 0=ทั่วไป 1=POS
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	StockProcess SMALLINT DEFAULT 0, -- 0 = Update Stock and cost 1= Update cost only 2= ไม่ Update Stock
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	PremiumStatus SMALLINT DEFAULT 0, -- 0 = ไม่ใช่ของแถม ,1 = เป็นของแถม 
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000),-- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย	
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	Custgroupcode	varchar(10),
+--for evs project
+	PriceCode varchar(10),
+	InvoiceType varchar(10),
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CNOTESUB_DOCDATE ON BCCreditNoteSub(DOCDATE);
+CREATE  INDEX IDX_CNOTESUB_DOCNO ON BCCreditNoteSub(DocNo);
+CREATE  INDEX IDX_CNOTESUB_ITEM ON BCCreditNoteSub(ItemCode);
+CREATE  INDEX IDX_CNOTESUB_SWH ON BCCreditNoteSub(WHCode);
+CREATE  INDEX IDX_CNOTESUB_SHF ON BCCreditNoteSub(ShelfCode);
+CREATE  INDEX IDX_CNOTESUB_IND ON BCCreditNoteSub(BehindIndex);
+CREATE  INDEX IDX_CNOTESUB_TYPE ON BCCreditNoteSub(MyType);
+CREATE  INDEX IDX_CNOTESUB_TS ON BCCreditNoteSub(TransState);
+CREATE  INDEX IDX_CNOTESUB_AR ON BCCreditNoteSub(ArCode);
+CREATE  INDEX IDX_CNOTESUB_ONE ON BCCreditNoteSub(ItemCode,UnitCode,WHCode,ShelfCode);
+CREATE  INDEX IDX_CNOTESUB_TWO ON BCCreditNoteSub(LineNumber);
+CREATE  INDEX IDX_CNOTESUB_THREE ON BCCreditNoteSub(SaleCode);
+CREATE  INDEX IDX_CNOTESUB_FOUR ON BCCreditNoteSub(ArCode,DocNo);
+CREATE  INDEX IDX_CNOTESUB_SERVICE ON BCCreditNoteSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_CNOTEISPROCESS ON BCCreditNoteSub(ItemCode,IsProcess);
+CREATE  INDEX IDX_CNOTEPAK1 ON BCCreditNoteSub(PackingRate1);
+CREATE  INDEX IDX_CNOTEPAK2 ON BCCreditNoteSub(PackingRate2);
+
+			
+create table BCInvDebitNote1
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DebitNoteNo	VARCHAR(20), -- เลขที่ใบเพิ่มหนี้
+	InvoiceNo	VARCHAR(20),	-- เลขที่ Invoice ที่จะลด
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่เพิ่มทันที 1=เพิ่มทันที
+	InvoiceDisc	VARCHAR(40),	-- ส่วนลดเดิม
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	OldAmount FLOAT DEFAULT 0.0, -- ยอดเดิม
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	DiscountAmount FLOAT DEFAULT 0.0, -- ยอดที่ลด
+	DiffAmount	FLOAT DEFAULT 0.0,	-- ยอดผลต่าง,ยอดที่จะลด เป็นรวมใน
+	ZeroTaxAmount	FLOAT DEFAULT 0.0, -- รวมยอดภาษีอัตรา 0
+	ExceptTaxAmount	FLOAT DEFAULT 0.0, --รวมยอดยกเว้นภาษี
+	TrueAmount	FLOAT DEFAULT 0.0,	-- ยอดที่ถูกต้อง OldAmount -DiffAmount-ZeroTaxAmount-ExceptTaxAmount
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * DiffAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * DiffAmount
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ExchangeProfit	FLOAT DEFAULT 0.0,  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+	Custgroupcode	varchar(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_INVDB1_DATE ON BCInvDebitNote1(DocDate);
+CREATE  INDEX IDX_INVDB1_AR ON BCInvDebitNote1(ArCode);
+CREATE  INDEX IDX_INVDB1_NO ON BCInvDebitNote1(DebitNoteNo);
+CREATE  INDEX IDX_INVDB1_INV ON BCInvDebitNote1(InvoiceNo);
+CREATE  INDEX IDX_INVDB11  ON BCInvDebitNote1(ArCode,DebitNoteNo);
+			
+create table BCDebitNote1
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	SumOldAmount	FLOAT DEFAULT 0.0, -- รวมใบกำกับเดิม (เป็นเงินบาทตาม Rate ใหม่)
+	SumTrueAmount	FLOAT DEFAULT 0.0, -- รวมยอดที่ถูกต้อง (เป็นเงินบาท)
+	SumofDiffAmount	FLOAT DEFAULT 0.0, -- รวมผลต่าง เป็นรวมใน 
+	SumofBeforeTax	FLOAT DEFAULT 0.0,  -- ยอดก่อนภาษี
+	SumOfTaxAmount	FLOAT DEFAULT 0.0, -- ยอดภาษี
+	SumOfTotalTax	FLOAT DEFAULT 0.0,  -- ยอดรวมภาษี
+	SumOfExceptTax	FLOAT DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	SumOfZeroTax FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	DiscountWord VARCHAR(30), -- ส่วนลด
+	DiscountAmount FLOAT DEFAULT 0.0,  -- ส่วนลด
+	NetDebtAmount	FLOAT DEFAULT 0.0, -- ยอดสุทธิ SumOfTotalTax + SumOfExceptTax
+	SumExchangeProfit	FLOAT DEFAULT 0.0,  -- รวมกำไร(ขาดทุน)
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่เพิ่มทันที 1=เพิ่มทันที
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย
+	CauseCode VARCHAR(10), -- สาเหตุการเพิ่มหนี้
+	PayBillStatus	SMALLINT	DEFAULT 0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	Custgroupcode	varchar(10),
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000) --วิธีการชำระเงิน 2	
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_DB1_DATE ON BCDebitNote1(DocDate);
+CREATE  INDEX IDX_DB1_AR ON BCDebitNote1(ArCode);
+CREATE  INDEX IDX_DB1_PBS ON BCDebitNote1(PayBillStatus);
+CREATE  INDEX IDX_DB1_BAL ON BCDebitNote1(BillBalance);
+CREATE  INDEX IDX_DB1_ROW	ON BCDebitNote1(ROWORDER);
+CREATE  INDEX IDX_DB1_1 ON BCDebitNote1(ArCode,DocNo);
+CREATE INDEX IDX_DB1_PNTC ON BCDebitNote1(PrintCount);
+
+create table BCDebitNoteSub1
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 6,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	DiscQty	FLOAT DEFAULT 0.0,
+	TempQty	FLOAT DEFAULT 0.0, -- ยอดส่งคืนตามที่ Key ไม่มีผลอะไร
+	BillQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	SumOfCost	FLOAT DEFAULT 0.0, -- ต้นทุนขายทั้งสิ้น ไม่ใช่ต้นทุนขายต่อหน่วย
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	InvoiceNo	VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	StockProcess SMALLINT DEFAULT 0, -- 0 = Update Stock and cost 1= Update cost only 2= ไม่ Update Stock
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	PremiumStatus SMALLINT DEFAULT 0, -- 0 = ไม่ใช่ของแถม ,1 = เป็นของแถม 
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย		
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	Custgroupcode	varchar(10),
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_DB1SNO ON BCDebitNoteSub1(DocNo);
+CREATE  INDEX IDX_DB1SDATE ON BCDebitNoteSub1(DOCDATE);
+CREATE  INDEX IDX_DB1SITEM ON BCDebitNoteSub1(ItemCode);
+CREATE  INDEX IDX_DB1SWH ON BCDebitNoteSub1(WHCode);
+CREATE  INDEX IDX_DB1SSHF ON BCDebitNoteSub1(ShelfCode);
+CREATE  INDEX IDX_DB1STYPE ON BCDebitNoteSub1(MyType);
+CREATE  INDEX IDX_DB1SIND ON BCDebitNoteSub1(BehindIndex);
+CREATE  INDEX IDX_DB1STS ON BCDebitNoteSub1(TransState);
+CREATE  INDEX IDX_DB1SAR ON BCDebitNoteSub1(ArCode);
+CREATE  INDEX IDX_DB11 ON BCDebitNoteSub1(ItemCode,UnitCode,WHCode,ShelfCode);
+CREATE  INDEX IDX_DB12 ON BCDebitNoteSub1(LineNumber);
+CREATE  INDEX IDX_DB13 ON BCDebitNoteSub1(ArCode,DocNo);
+CREATE  INDEX IDX_DB_SERVICE ON BCDebitNoteSub1(ItemCode,DocDate,BehindIndex);						
+CREATE  INDEX IDX_DBPAK1 ON BCDebitNoteSub1(PackingRate1);
+CREATE  INDEX IDX_DBPAK2 ON BCDebitNoteSub1(PackingRate2);
+
+create table BCSaleOrder
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0, -- Add 01/12/2002
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	DeliveryDay	SMALLINT DEFAULT 0, -- ส่งของภายใน
+	DeliveryDate	DATETIME, -- วันที่ลงของให้ลูกค้า		
+	SaleCode	VARCHAR(10),
+	DeliveryAddr VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	RefDocNo	VARCHAR(20), -- เลขที่เอกสารอ้างอิง
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่หมด 1=ตัดหมดแล้ว
+	DeliveryStatus	SMALLINT DEFAULT 0, -- ดึงไปทำใบสั่งจ่ายสินค้า 0=ยังไม่ดึง 1=ดึงไปทำแล้ว
+	SOStatus	SMALLINT DEFAULT 0, -- 0=สั่งขาย 1=สั่งจอง
+	HoldingStatus SMALLINT DEFAULT 0, -- 0=ไม่ Holding 1= Holding
+	CrAuthorizeMan VARCHAR(20),
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsConditionSend SMALLINT DEFAULT 0,-- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	OwnReceive VARCHAR(255),
+	CarLicense VARCHAR(30),
+	ApproveCode	VARCHAR(10),
+	ApproveDateTime	DATETIME,
+	IsUseRobotSale SMALLINT DEFAULT 0, -- ใช้ Robot ในการพิมพ์ใบจัด Auto 0 = ไม่ใช้,1 = ใช้
+	TotalTransport	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	SumOtherValue	FLOAT DEFAULT 0.0, -- รวมค่าอื่น
+	READYFORPAY SMALLINT DEFAULT 0, 	--1=เอาไปทำใบจ่ายได้
+	TimeTransport		VARCHAR(10),	-- เวลาข่นส่ง
+	CarType		VARCHAR(10), -- ประเภทรถ
+	CondPayCode	VARCHAR(10),  --เงื่อนไขการชำระเงิน
+	PrintCount SMALLINT DEFAULT 0, -- Count Print saleorder -- Jeab-20030923 
+	PORefNo	VARCHAR(20),
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	MethodePaybill	VARCHAR(10), --วิธีการชำระเงิน
+	MethodePaybill2	  VARCHAR(1000), --วิธีการชำระเงิน 2	
+	promotioncode VARCHAR(20)
+    PRIMARY KEY(DocNo)
+);
+	 		
+CREATE  INDEX IDX_SO_DATE ON BCSaleOrder(DocDate);
+CREATE  INDEX IDX_SO_AR ON BCSaleOrder(ArCode);
+CREATE  INDEX IDX_SO_DUE ON BCSaleOrder(DueDate);
+CREATE  INDEX IDX_SO_BS ON BCSaleOrder(BillStatus);
+CREATE  INDEX IDX_SO_ROW	ON BCSaleOrder(ROWORDER);
+CREATE INDEX IDX_SO_PNTC ON BCSaleOrder(PrintCount);
+
+create table BCSaleOrderSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือหลังตัด
+	DeliveryQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือหลังตัดสั่งจ่ายสินค้า
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositePrice2	FLOAT DEFAULT 0.0, -- ราคาต่อหน่วยที่ 2 (เส้น)
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	StkReserveNo	VARCHAR(20),
+	SOStatus	SMALLINT DEFAULT 0, -- 0=สั่งขาย 1=สั่งจอง
+	HoldingStatus SMALLINT DEFAULT 0, -- 0=ไม่ Holding 1= Holding
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบสั่งจองสินค้า 1=ใบเสนอราคา
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	PremiumStatus SMALLINT DEFAULT 0, -- 0 = ไม่ใช่ของแถม ,1 = เป็นของแถม
+	IsUseRobotSale SMALLINT DEFAULT 0, -- ใช้ Robot ในการพิมพ์ใบจัด Auto 0 = ไม่ใช้,1 = ใช้
+	IsConditionSend SMALLINT DEFAULT 0,-- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	TransportAmount	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	OtherValue	FLOAT DEFAULT 0.0, -- ค่าอื่น
+	REMAINPAYQTY	FLOAT DEFAULT 0.0,
+	ISPAYMENT SMALLINT DEFAULT 0, 	--1=เอาไปทำใบจ่ายได้	
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for item set by aom 15-07-2003
+	itemsetcode VARCHAR(25),
+	PORefNo VARCHAR(20),
+--for bcservice
+	BehindIndex	SMALLINT DEFAULT 1,
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0,
+	promotioncode VARCHAR(20),
+	masteritemcode	VARCHAR(25)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_SOS_DATE ON BCSaleOrderSub(DocDate);
+CREATE  INDEX IDX_SOS_NO ON BCSaleOrderSub(DocNo);
+CREATE  INDEX IDX_SOS_AR ON BCSaleOrderSub(ArCode);
+CREATE  INDEX IDX_SOS_SALE ON BCSaleOrderSub(SaleCode);
+CREATE  INDEX IDX_SOS_RQTY	ON BCSaleOrderSub(RemainQty);
+CREATE  INDEX IDX_SOS_TS ON BCSaleOrderSub(TransState);
+CREATE  INDEX IDX_SOS_REF ON BCSaleOrderSub(StkReserveNo);
+CREATE  INDEX IDX_SOS_SERVICE ON BCSaleOrderSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_SOSISPROCESS ON BCSaleOrderSub(ItemCode,IsProcess);
+CREATE  INDEX IDX_SOSPAK1 ON BCSaleOrderSub(PackingRate1);
+CREATE  INDEX IDX_SOSPAK2 ON BCSaleOrderSub(PackingRate2);
+			
+create table BCStkReserve
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	DeliveryDay	SMALLINT DEFAULT 0, -- ส่งของภายใน
+	DeliveryDate	DATETIME, -- วันที่ลงของให้ลูกค้า			
+	SaleCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ตัดยังไม่หมด 1=ตัดหมดแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DocNo)
+);
+	 		
+CREATE  INDEX IDX_SR_DATE ON BCStkReserve(DocDate);
+CREATE  INDEX IDX_SR_AR ON BCStkReserve(ArCode);
+CREATE  INDEX IDX_SR_DUE ON BCStkReserve(DueDate);
+CREATE  INDEX IDX_SR_BS ON BCStkReserve(BillStatus);
+CREATE  INDEX IDX_SR_ROW	ON BCStkReserve(ROWORDER);
+	 		
+create table BCStkReserveSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือ
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	QuotationNo	VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BarCode	VARCHAR(20)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_SRS_DATE ON BCStkReserveSub(DocDate);
+CREATE  INDEX IDX_SRS_AR ON BCStkReserveSub(ArCode);
+CREATE  INDEX IDX_SRS_SALE ON BCStkReserveSub(SaleCode);
+CREATE  INDEX IDX_SRS_RQTY	ON BCStkReserveSub(RemainQty);
+CREATE  INDEX IDX_SRS_TS ON BCStkReserveSub(TransState);
+CREATE  INDEX IDX_SRS_REF ON BCStkReserveSub(QuotationNo);
+
+create table BCQuotation
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	DeliveryDay	SMALLINT DEFAULT 0, --
+	DeliveryDate	DATETIME, -- 
+	Subject	VARCHAR(255),
+	Enclosures	VARCHAR(255),
+	Validity	SMALLINT DEFAULT 0,
+	SaleCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription1	VARCHAR(1000),
+	MyDescription2	VARCHAR(1000),
+	BillStatus	SMALLINT DEFAULT 0, -- 
+	IsCancel	SMALLINT DEFAULT 0, -- 
+	ExpireCredit SMALLINT DEFAULT 0, -- 
+	CallCheckDate DATETIME, -- 
+	ExpireDate DATETIME, --
+	CustomerAssert	SMALLINT DEFAULT 0, --
+	AssertStatus SMALLINT DEFAULT 0, -- 
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	TotalTransport	FLOAT DEFAULT 0.0, --
+	BillType	SMALLINT DEFAULT 0,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030922
+	IsImport SMALLINT DEFAULT 0, --
+	UserGroup VARCHAR(10), -- 
+	MethodePaybill	VARCHAR(10), --
+	MethodePaybill2	  VARCHAR(1000) 
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_QUO_DATE ON BCQuotation(DocDate);
+CREATE  INDEX IDX_QUO_AR ON BCQuotation(ArCode);
+CREATE  INDEX IDX_QUO_DUE ON BCQuotation(DueDate);
+CREATE  INDEX IDX_QUO_BS ON BCQuotation(BillStatus);
+CREATE  INDEX IDX_QUO_ROW	ON BCQuotation(ROWORDER);
+CREATE  INDEX IDX_QUO_PNTC ON BCQuotation(printcount);
+	 		
+create table BCQuotationSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0, -- 
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 
+	UnitCode	VARCHAR(10),
+	OppositePrice2	FLOAT DEFAULT 0.0, --
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	LineNumber SMALLINT DEFAULT 0,
+	CategoryCode	VARCHAR(10),	--
+	GroupCode	VARCHAR(10),	-- 
+	BrandCode	VARCHAR(10), -- 
+	TypeCode	VARCHAR(10),	--
+	FormatCode	VARCHAR(10),	-- 
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	PremiumStatus SMALLINT DEFAULT 0, -- 
+	QuoStatusCode VARCHAR(10), --
+	IsConditionSend SMALLINT DEFAULT 0,-- 
+	TransportAmount	FLOAT DEFAULT 0.0, -- 
+--support color,size,style
+	Colorcode VARCHAR(10),
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for item set by aom 23-06-2004
+	itemsetcode VARCHAR(25),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 MONEY DEFAULT 0.0,
+	PackingRate2 MONEY DEFAULT 0.0,
+	BehindIndex	SMALLINT DEFAULT 1,
+	UserGroup VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_QUOS_DATE ON BCQuotationSub(DocDate);
+CREATE  INDEX IDX_QUOS_AR ON BCQuotationSub(ArCode);
+CREATE  INDEX IDX_QUOS_SALE ON BCQuotationSub(SaleCode);
+CREATE  INDEX IDX_QUOS_RQTY	ON BCQuotationSub(RemainQty);
+CREATE  INDEX IDX_QUOS_PAK1 ON BCQuotationSub(PackingRate1);
+CREATE  INDEX IDX_QUOS_PAK2 ON BCQuotationSub(PackingRate2);
+	
+create table BCARDepositUse -- การตัดเงินมัดจำ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DepositNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	Balance FLOAT DEFAULT 0.0, -- ยอดคงเหลือ
+	Amount	FLOAT DEFAULT 0.0, -- ยอดที่ตัดรับตามที่ key
+	DeposTaxType	SMALLINT DEFAULT 0,
+	NetAmount FLOAT DEFAULT 0.0, -- ยอดที่ตัดรับไม่รวม ภาษี (Auto calc) ในกรณีที่บิลขายเป็นรวมใน
+	LineNumber SMALLINT DEFAULT 0,
+	CurrencyCode	VARCHAR(10),
+	DPExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม DPExchangeRate * NetAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * NetAmount	
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(DocNo,DepositNo)
+);
+
+CREATE  INDEX IDX_ARDU_NO ON BCARDepositUse(DocNo);
+CREATE  INDEX IDX_ARDU_DNO ON BCARDepositUse(DepositNo);
+CREATE  INDEX IDX_ARDU_DATE ON BCARDepositUse(DocDate);
+
+create table BCAPDepositUse -- การตัดเงินมัดจำ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DepositNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	Balance FLOAT DEFAULT 0.0, -- ยอดคงเหลือ
+	Amount	FLOAT DEFAULT 0.0, -- ยอดที่ตัดจ่ายตามที่ key
+	DeposTaxType	SMALLINT DEFAULT 0,
+	NetAmount FLOAT DEFAULT 0.0, -- ยอดที่ตัดจ่ายไม่รวม ภาษี (Auto calc) ในกรณีที่บิลซื้อเป็นรวมใน
+	CurrencyCode	VARCHAR(10),
+	LineNumber SMALLINT DEFAULT 0,
+	DPExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม DPExchangeRate * NetAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * NetAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount2-HomeAmount1
+    PRIMARY KEY(DocNo,DepositNo)
+);
+
+CREATE  INDEX IDX_APDU_NO ON BCAPDepositUse(DocNo);
+CREATE  INDEX IDX_APDU_DNO ON BCAPDepositUse(DepositNo);
+CREATE  INDEX IDX_APDU_DATE ON BCAPDepositUse(DocDate);
+
+create table BCARDeposit
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	TaxNo	VARCHAR(20),
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	SaleCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0, -- TotalAmount - SumOfWTax
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	RefNo	VARCHAR(20),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsReturnFLOAT SMALLINT DEFAULT 0, -- 1=ลดหนี้หรือคืนเงิน
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-2003092209
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_ARDEP_DATE ON BCARDeposit(DocDate);
+CREATE  INDEX IDX_ARDEP_AR ON BCARDeposit(ArCode);
+CREATE  INDEX IDX_ARDEP_BAL ON BCARDeposit(BillBalance);
+CREATE  INDEX IDX_ARDEP_PNTC ON BCARDeposit(printcount);
+
+create table BCPaybill
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยัง 1=หมด
+	DueDate	DATETIME,
+	PayServiceOnly SMALLINT DEFAULT 0, -- 1=รับชำระค่าบริการอย่างเดียว
+	PrintItemOfBill SMALLINT DEFAULT 0, -- 1=พิมพ์รายการสินค้า
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	IsPrintAuto SMALLINT DEFAULT 0, -- พิมพ์อัตโนมัติ  1= พิมพ์แล้ว
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+--	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	BillTemporary FLOAT DEFAULT 0.0, -- ยอดทำใบเสร็จชั่วคราว 2003-11-27
+	--for EVS project
+	DiscountWord VARCHAR(1000),
+	Discount FLOAT DEFAULT 0.0,
+	WithHoldTax FLOAT DEFAULT 0.0,	
+	DiscountAmount FLOAT DEFAULT 0.0,
+	Iscancel SMALLINT DEFAULT 0 --jum 
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_PB_DATE ON BCPaybill(DocDate);
+CREATE  INDEX IDX_PB_AR ON BCPaybill(ArCode);
+CREATE  INDEX IDX_PB_BS ON BCPaybill(BillStatus);
+CREATE  INDEX IDX_PB_PNTC ON BCPaybill(printcount);
+			
+create table BCPaybillSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	PayBalance FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PBS_NO ON BCPaybillSub(DocNo);
+CREATE  INDEX IDX_PBS_DATE ON BCPaybillSub(DocDate);
+CREATE  INDEX IDX_PBS_AR ON BCPaybillSub(ArCode);
+CREATE  INDEX IDX_PBS_PBAL ON BCPaybillSub(PayBalance);
+CREATE  INDEX IDX_PBS_INVN ON BCPaybillSub(InvoiceNo);
+
+create table BCReceipt1 -- ใบเสร็จรับเงิน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดลูกหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	DebtLimitReturn FLOAT DEFAULT 0.0, -- ยอดทีคืนวงเงิน Default = SumHomeAmount1
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	IsConfirm	SMALLINT DEFAULT 0,
+	PayServiceOnly SMALLINT DEFAULT 0, -- 1=รับชำระค่าบริการอย่างเดียว (อ้างได้เฉพาะ  type=3)
+	PrintItemOfBill SMALLINT DEFAULT 0, -- 1=พิมพ์ใบเสร็จเหมือนใบส่งของ
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	SumOfEarnest FLOAT DEFAULT 0.0 -- ยอดเงินล่วงหน้า
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_REP1_DATE ON BCReceipt1(DocDate);
+CREATE  INDEX IDX_REP1_AR ON BCReceipt1(ArCode);
+CREATE  INDEX IDX_REP1_PNTC ON BCReceipt1(printcount);
+
+create table BCRecBillItemSub -- table สำหรับแสดงรายการสินค้าที่ถูกตัดในการรับชำระหนี้ค่าบริการ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	RecType	SMALLINT DEFAULT 0, -- 0= รับชำระหนี้ ,1 =ใบเสร็จชั่วคราว
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	ItemName	VARCHAR(1000),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	DocNo	VARCHAR(20), -- ใบเสร็จ
+	DocDate	DATETIME, -- วันที่ใบเสร็จ
+	InvoiceNo	VARCHAR(20),
+	Qty	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0, -- post gl
+	IncTaxAmount FLOAT DEFAULT 0.0,
+	RefLineNumber	SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+			
+create table BCReceiptSub1
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	DebtLimitReturn FLOAT DEFAULT 0.0, -- ยอดทีคืนวงเงิน Default = SumHomeAmount1
+	DebtLimitRetDesc VARCHAR(1000), -- หมายเหตุการคืนวงเงิน
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0,  -- 0=ใบส่งของ 1=เอกสารยกมา 2=ใบลดหนี้ 3=ใบเพิ่มหนี้ 4=ลูกหนี้อื่นๆ 8= รับเงินล่วงหน้า
+	RefNo	VARCHAR(20),
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบวางบิล 1=ใบเสร็จชั่วคราว
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_REPS1_NO ON BCReceiptSub1(DocNo);
+CREATE  INDEX IDX_REPS1_DATE ON BCReceiptSub1(DocDate);
+CREATE  INDEX IDX_REPS1_AR ON BCReceiptSub1(ArCode);
+CREATE  INDEX IDX_REPS1_TS ON BCReceiptSub1(TransState);
+CREATE  INDEX IDX_REPS1_INVNO ON BCReceiptSub1(InvoiceNo);
+
+
+create table BCRecSubTemp
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	DebtLimitReturn FLOAT DEFAULT 0.0, -- ยอดทีคืนวงเงิน Default = SumHomeAmount1
+	DebtLimitRetDesc VARCHAR(1000), -- หมายเหตุการคืนวงเงิน
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0,  -- 0=ใบส่งของ 1=เอกสารยกมา 2=ใบลดหนี้ 3=ใบเพิ่มหนี้ 4=ลูกหนี้อื่นๆ
+	RefNo	VARCHAR(20),
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบวางบิล 1=ใบเสร็จชั่วคราว
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_REPST_NO ON BCRecSubTemp(DocNo);
+			
+create table BCReceipt2 -- ใบเสร็จรับเงินชั่วคราว
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	PayServiceOnly SMALLINT DEFAULT 0, -- 1=รับชำระค่าบริการอย่างเดียว
+	PrintItemOfBill SMALLINT DEFAULT 0, -- 1=พิมพ์รายการสินค้า
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	SumHomeAmount FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub)
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยัง 1=หมด
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DocNo)
+);
+			
+CREATE  INDEX IDX_REP2_DATE ON BCReceipt2(DocDate);
+CREATE  INDEX IDX_REP2_AR ON BCReceipt2(ArCode);
+CREATE  INDEX IDX_REP2_PNTC ON BCReceipt2(printcount);
+
+create table BCReceiptSub2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	BillType	SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	PaybillNo	VARCHAR(20),
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0,  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_REPS2_NO ON BCReceiptSub2(DocNo);
+CREATE  INDEX IDX_REPS2_DATE ON BCReceiptSub2(DocDate);
+CREATE  INDEX IDX_REPS2_AR ON BCReceiptSub2(ArCode);
+CREATE  INDEX IDX_REPS2_TS ON BCReceiptSub2(TransState);
+CREATE  INDEX IDX_REPS2_INVNO ON BCReceiptSub2(InvoiceNo);
+
+
+create table BCReceipt3 -- ตัดยอดลูกหนี้สูญ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดลูกหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_REP3_DATE ON BCReceipt3(DocDate);
+CREATE  INDEX IDX_REP3_AR ON BCReceipt3(ArCode);
+CREATE  INDEX IDX_REP3_PNTC ON BCReceipt3(printcount);
+			
+create table BCReceiptSub3
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0,  -- 0=ใบส่งของ 1=เอกสารยกมา 2=ใบลดหนี้ 3=ใบเพิ่มหนี้ 4=ลูกหนี้อื่นๆ
+	RefNo	VARCHAR(20),
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบวางบิล 1=ใบเสร็จชั่วคราว
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_REPS3_NO ON BCReceiptSub3(DocNo);
+CREATE  INDEX IDX_REPS3_DATE ON BCReceiptSub3(DocDate);
+CREATE  INDEX IDX_REPS3_AR ON BCReceiptSub3(ArCode);
+CREATE  INDEX IDX_REPS3_TS ON BCReceiptSub3(TransState);
+CREATE  INDEX IDX_REPS3_INVNO ON BCReceiptSub3(InvoiceNo);
+		
+create table BCAPDebtTable
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ApCode	VARCHAR(20) NOT NULL,
+	PeriodNo	SMALLINT DEFAULT 0 NOT NULL,
+	CurrencyCode	VARCHAr(10) NOT NULL,
+	DebtAmount	FLOAT DEFAULT 0.0,
+	ChqOnHand	FLOAT DEFAULT 0.0,
+	ChqReturn	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ApCode,PeriodNo,CurrencyCode)
+);
+
+create table BCAP
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(20) NOT NULL,
+	Name1	VARCHAR(1000) NOT NULL,
+	Name2	VARCHAR(1000),
+	DefDeliveryAddr VARCHAR(10),
+	DefContactCode	VARCHAR(10),
+	Address	VARCHAR(1000),
+	TransportRemark	VARCHAR(1000),
+	DefTransport	VARCHAR(10),
+	Telephone	VARCHAR(50),
+	Fax	VARCHAR(50),
+	AccountCode	VARCHAR(20),
+	IDCardNo VARCHAR(30), -- เลขที่บัตรประชาชน
+	BankAccNo VARCHAR(30), -- เลขที่บัญชีธนาคาร 2/12/2002 Jeab
+	LastContactDate	DATETIME,
+	LastPayDate	DATETIME,
+	CreditDay	SMALLINT DEFAULT 0,
+	DetailDiscount	VARCHAR(35),
+	Discount	VARCHAR(35),
+	CashDiscount VARCHAR(35),
+	LeadTime	SMALLINT DEFAULT 0, -- ระยะเวลาขนส่ง
+	DebtLimit	FLOAT DEFAULT 0.0,
+	DebtAmount	FLOAT DEFAULT 0.0,
+	ChqOnHand	FLOAT DEFAULT 0.0,
+	ChqReturn	FLOAT DEFAULT 0.0,
+	DefaultTaxRate	FLOAT DEFAULT 7.0,
+	TaxNo	VARCHAR(20),
+	PaymentRemark	VARCHAR(1000),
+	StatementRemark	VARCHAR(1000),
+	PicFileName	VARCHAR(50),
+	TypeCode	VARCHAR(10),
+	EmailAddress	VARCHAR(40),
+	GroupCode	VARCHAR(10),
+	GroupOfDebt	VARCHAR(10),
+	PersonType	SMALLINT,	-- 0=บุคลลธรรมดา 1=นิติบุคคล
+	IsMakeTrans SMALLINT DEFAULT 0, -- 0=ออกบิลได้ 1=ออกบิลไม่ได้
+	ActiveStatus	SMALLINT DEFAULT 1,
+	MapCode	VARCHAR(10),	-- รหัสแผนที่ที่ตั้งบริษัทเจ้าหนี้
+	MapPosition_X	SMALLINT	DEFAULT  0,
+	MapPosition_Y	SMALLINT	DEFAULT 0,
+	ItemDescGroup	SMALLINT	DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	UserGroup	VARCHAR(1000),
+	EarnestAmount	FLOAT DEFAULT 0.0, -- ยอดเงินล่วงหน้า
+	DefaultWTaxCash FLOAT DEFAULT 3.0 -- Jeab 2005-09-13 ให้บริการจากการซื้อบัตรเงินสด	
+    PRIMARY KEY(CODE)
+);
+
+CREATE  INDEX IDX_AP_ACT ON BCAP(ActiveStatus);
+
+create table BCPayFLOAT
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PayAmount	FLOAT	DEFAULT 0.0,
+	HomeAmount	FLOAT	DEFAULT 0.0, -- ยอดรับเงินเป็นเงินบาท
+	ChqTotalAmount	FLOAT	DEFAULT 0.0,
+	PaymentType	SMALLINT DEFAULT 0,
+	SaveFrom SMALLINT DEFAULT 0,
+	PayChqState	SMALLINT DEFAULT 0, -- 0=เช็คใบใหม่ 1=ตัดจากเช็คใบเดิม
+	LineNumber SMALLINT DEFAULT 0,
+	RefNo	VARCHAR(30),
+	BookNo	VARCHAR(30),
+	BankCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	TransBankDate DATETIME,
+	MyDescription	VARCHAR(255),
+	ProjectCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	RefDate	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PAYM_DATE ON BCPayFLOAT(DocDate);
+CREATE  INDEX IDX_PAYM_AP ON BCPayFLOAT(ApCode);
+CREATE  INDEX IDX_PAYM_PTY ON BCPayFLOAT(PaymentType);
+
+-- สำหรับใบเตรียมจ่าย
+create table BCPayFLOAT2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PayAmount	FLOAT	DEFAULT 0.0,
+	HomeAmount	FLOAT	DEFAULT 0.0, -- ยอดรับเงินเป็นเงินบาท
+	ChqTotalAmount	FLOAT	DEFAULT 0.0,
+	PaymentType	SMALLINT DEFAULT 0,
+	SaveFrom SMALLINT DEFAULT 0,
+	PayChqState	SMALLINT DEFAULT 0, -- 0=เช็คใบใหม่ 1=ตัดจากเช็คใบเดิม
+	LineNumber SMALLINT DEFAULT 0,
+	RefNo	VARCHAR(30),
+	BookNo	VARCHAR(30),
+	BankCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	TransBankDate DATETIME,
+	MyDescription	VARCHAR(255),
+	ProjectCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	RefDate	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PAYM_DATE ON BCPayFLOAT2(DocDate);
+CREATE  INDEX IDX_PAYM_AP ON BCPayFLOAT2(ApCode);
+CREATE  INDEX IDX_PAYM_PTY ON BCPayFLOAT2(PaymentType);
+
+create table BCAPPeriodState -- ยอดหนี้ในแต่ละ Period แสดงเป็น Home Currency
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ApCode	VARCHAR(20) NOT NULL,
+	PeriodNo	SMALLINT DEFAULT 0,
+	BeginAmount	FLOAT DEFAULT 0.0, -- ยอดยกมา
+	DebtAmount	FLOAT DEFAULT 0.0, -- ยอดตั้งเจ้าหนี้
+	CNAmount	FLOAT DEFAULT 0.0, -- ยอดลดหนี้
+	DebitAmount	FLOAT DEFAULT 0.0, -- ยอดเพิ่หนี้
+	PaymentAmount	FLOAT DEFAULT 0.0, -- ยอดตัดชำระหนี้
+	EndAmount	FLOAT DEFAULT 0.0, -- ยอดยกไป
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- กำไรขาดทุนประจำงวด
+	advanceamt		FLOAT DEFAULT 0.0,
+	advanceretamt	FLOAT DEFAULT 0.0,
+	advanceuseamt	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_APPSAp ON BCAPPeriodState(ApCode);
+CREATE  INDEX IDX_APPSPNo ON BCAPPeriodState(PeriodNo);
+
+create table BCAPINVBALANCE
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ApCode	VARCHAR(20) NOT NULL,
+	DepartCode	VARCHAR(10) ,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	StatementDate	DATETIME,
+	StatementState	SMALLINT DEFAULT 0, -- 0=ยังไม่วางบิล 1=วางบิลอยู่
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	BillBalance	FLOAT DEFAULT 0.0,
+	BillType	SMALLINT DEFAULT 0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0 -- มูลค่าวางบิล
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_APINVBDATE ON BCAPINVBALANCE(DOCDATE);
+CREATE  INDEX IDX_APINVBDUE ON BCAPINVBALANCE(DUEDATE);
+CREATE  INDEX IDX_APINVBARCD ON BCAPINVBALANCE(APCODE);
+CREATE  INDEX IDX_APINVBDEP ON BCAPINVBALANCE(DEPARTCODE);
+CREATE  INDEX IDX_APINVBBAL ON BCAPINVBALANCE(BillBalance);
+CREATE  INDEX IDX_APINVBBS	ON BCAPINVBALANCE(StatementState);
+
+create table BCAPOtherDebt -- บันทึกเจ้าหนี้อื่นๆ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ApCode	VARCHAR(20) NOT NULL,
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	SumofDebit	FLOAT DEFAULT 0.0,
+	SumofCredit	FLOAT DEFAULT 0.0,
+	DepartCode	VARCHAR(10) ,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	PayBillDate	DATETIME,
+	IsConfirm	SMALLINT DEFAULT 0,
+	StatementState	SMALLINT DEFAULT 0, -- 0=ยังไม่วางบิล 1=วางบิลอยู่
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	PrintCount SMALLINT DEFAULT 0, -- Count Print saleorder -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_APODBS	ON BCAPOtherDebt(StatementState);
+CREATE  INDEX IDX_APODBal ON BCAPOtherDebt(BillBalance);
+CREATE  INDEX IDX_APODAP	ON BCAPOtherDebt(ApCode);
+CREATE  INDEX IDX_APODDUE ON BCAPOtherDebt(DueDate);
+CREATE  INDEX IDX_APODPNTC ON BCAPOtherDebt(printcount);
+
+create table BCGoodsRecCheck -- ใบตรวจรับสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ApCode	VARCHAR(20) NOT NULL,
+	MyDescription	VARCHAR(1000),
+	ServiceRemark 	VARCHAR(1000), -- การให้บริการ
+	BillGroup	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_GDRCDATE ON BCGoodsRecCheck(DOCDATE);
+CREATE  INDEX IDX_GDRCARCD ON BCGoodsRecCheck(APCODE);
+CREATE  INDEX IDX_GDRCROW	ON BCGoodsRecCheck(ROWORDER);
+
+create table BCGoodsRecChkSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	MyDescription	VARCHAR(255),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดที่รับ
+	PerfectQty	FLOAT DEFAULT 0.0, -- สมบูรณ์
+	BadQty FLOAT DEFAULT 0.0, -- ไม่ดี
+	BrokenQty FLOAT DEFAULT 0.0, -- แตก
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	PORefNo	VARCHAR(20),
+	LineNumber	SMALLINT DEFAULT 0,
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	--support color,size,style
+	Colorcode VARCHAR(10),
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10)		
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_GDRSDATE ON BCGoodsRecChkSub(DOCDATE);
+CREATE  INDEX IDX_GDRSARCD ON BCGoodsRecChkSub(APCODE);
+CREATE  INDEX IDX_GDRSITEM ON BCGoodsRecChkSub(ITEMCODE);
+
+create table BCAPINVOICE
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME NOT NULL,
+	TaxType	SMALLINT DEFAULT 0,
+	ApCode	VARCHAR(20) NOT NULL,
+	DepartCode	VARCHAR(10) DEFAULT '^BC',
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	StatementDate	DATETIME,
+	StatementState	SMALLINT DEFAULT 0, -- 0=ยังไม่วางบิล 1=วางบิลอยู่
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillType	SMALLINT DEFAULT 0,
+	BillGroup	VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	DepositIncTax SMALLINT DEFAULT 1, -- เงินมัดจำ 1 = มีภาษี 0= ไม่มี Tax
+	SumOfDeposit1	FLOAT DEFAULT 0.0, -- สำหรับตัดยอดของบิล
+	SumOfDeposit2	FLOAT DEFAULT 0.0, -- สำหรับ post GL แต่ต้องถอด Vat ถ้าเป็นรวมใน
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetDebtAmount * ExchangRate  -- Jeab 2003-04-21
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	GRBillStatus SMALLINT DEFAULT 0, -- 0=ปกติ 1=ตัดหมดแล้ว, 2= จะเกินกับบิล GR เท่านั้น กรณีมีการ  IR ก่อน GR เพื่อไม่ให้ GR ใบนั้นดึงไปทำ IR ได้อีก
+	GRIRBillStatus SMALLINT DEFAULT 0, -- 0=ปกติ 1=เป็นใบ GR อย่างเดียว CHM 2=IR
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsCreditNote	SMALLINT DEFAULT 0, -- 0=ยังไม่ลดหนี้ 1=ลดหนี้แล้ว
+	IsDebitNote	SMALLINT DEFAULT 0, -- 0=ยังไม่เพิ่มหนี้ 1=เพิ่มหนี้แล้ว
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	ExchangeProfit	FLOAT DEFAULT 0.0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	Remark1	VARCHAR(30),
+	Remark2	VARCHAR(30),
+	Remark3	VARCHAR(30),
+	Remark4	VARCHAR(30),
+	Remark5	VARCHAR(30),
+	OwnerTransport VARCHAR(20), -- ผู้ขนส่ง/บริษัทขนส่ง
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	RefDocNo	VARCHAR(1000), -- เอกสารที่อ้างอิงทั้งหมด
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	SumOfWTaxCash	FLOAT DEFAULT 0.0,	-- Jeab 2005-09-12
+	SumBaseWTaxCash	FLOAT DEFAULT 0.0, -- Jeab 2005-09-12
+	SumComWTaxCash	FLOAT DEFAULT 0.0 -- Jeab 2005-09-12
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_APINVDATE ON BCAPINVOICE(DOCDATE);
+CREATE  INDEX IDX_APINVDUE ON BCAPINVOICE(DUEDATE);
+CREATE  INDEX IDX_APINVARCD ON BCAPINVOICE(APCODE);
+CREATE  INDEX IDX_APINVDEP ON BCAPINVOICE(DEPARTCODE);
+CREATE  INDEX IDX_APINVBAL ON BCAPINVOICE(BillBalance);
+CREATE  INDEX IDX_APINVPS	ON BCAPINVOICE(StatementState);
+CREATE  INDEX IDX_APINVBT	ON BCAPINVOICE(BillType);
+CREATE  INDEX IDX_APINVROW	ON BCAPINVOICE(ROWORDER);
+CREATE  INDEX IDX_APINVPNTC	ON BCAPINVOICE(printcount);
+
+create table BCAPINVOICESUB
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 2,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	CNQty	FLOAT DEFAULT 0.0,
+	GRRemainQty FLOAT DEFAULT 0.0, -- ยอดที่ยังไม่ทำ IR
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	BalanceAmount	FLOAT DEFAULT 0.0,
+	SumOfExpCost	FLOAT DEFAULT 0.0, -- เป็นเงินบาท
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	PORefNo	VARCHAR(20),
+	IRRefNo	VARCHAR(20), -- สำหรับ GR ที่มีการตั้งหนี้ก่อน
+	StockType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT DEFAULT 0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	BarCode	VARCHAR(20),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	IsPromotion SMALLINT DEFAULT 0,
+	PORefLinenum smallint default 0, -- jum use FIFO 	
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	StatusReceive SMALLINT DEFAULT 0, -- 0 = ปกติ, 1 = ของเกิน, 2 = ของแถม, 3 = ของสูญหาย, 4 = ของชำรุดจากขนส่ง, 5 = ขนส่งขาดส่ง , 6 = ชำรุดจากเจ้าหนี้
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+	SumOfCost	FLOAT DEFAULT 0.0, --aom 2003-05-22
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0,
+	DiscCashCard SMALLINT DEFAULT 0, -- ใช่ส่วนลดบัตรเงินสด	
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	BaseWTax	FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_APINVSDATE ON BCAPINVOICESUB(DOCDATE);
+CREATE  INDEX IDX_APINVSDOCNO ON BCAPINVOICESUB(DOCNO);
+CREATE  INDEX IDX_APINVSARCD ON BCAPINVOICESUB(APCODE);
+CREATE  INDEX IDX_APINVSARDEP ON BCAPINVOICESUB(DEPARTCODE);
+CREATE  INDEX IDX_APINVSIND ON BCAPINVOICESUB(BehindIndex);
+CREATE  INDEX IDX_APINVSTYPE ON BCAPINVOICESUB(MYTYPE);
+CREATE  INDEX IDX_APINVSITEM ON BCAPINVOICESUB(ITEMCODE);
+CREATE  INDEX IDX_APINVSWH ON BCAPINVOICESUB(WHCODE);
+CREATE  INDEX IDX_APINVSSHLF ON BCAPINVOICESUB(SHELFCODE);
+CREATE  INDEX IDX_APINVSBND ON BCAPINVOICESUB(BRANDCODE);
+CREATE  INDEX IDX_APINVSGRP ON BCAPINVOICESUB(GROUPCODE);
+CREATE  INDEX IDX_APINVSTYPEC ON BCAPINVOICESUB(TYPECODE);
+CREATE  INDEX IDX_APINVSFRM ON BCAPINVOICESUB(FORMATCODE);
+CREATE  INDEX IDX_APINVSTS ON BCAPINVOICESUB(TransState);
+CREATE  INDEX IDX_APINVSERVICE ON BCAPINVOICESUB(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_APINVISPROCESS ON BCAPINVOICESUB(ItemCode,IsProcess);
+CREATE  INDEX IDX_APINVPAK1 ON BCAPINVOICESUB(PackingRate1);
+CREATE  INDEX IDX_APINVPAK2 ON BCAPINVOICESUB(PackingRate2);
+
+create table BCIRSUB -- รายการย่อยของใบ IR
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	CNQty	FLOAT DEFAULT 0.0,
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	BalanceAmount	FLOAT DEFAULT 0.0,
+	SumOfExpCost	FLOAT DEFAULT 0.0, -- เป็นเงินบาท
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	GRRefNo	VARCHAR(20), -- อ้างอิงใบ GR
+	PORefNo	VARCHAR(20),
+	StockType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber	SMALLINT DEFAULT 0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	BarCode	VARCHAR(20),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	IsPromotion SMALLINT DEFAULT 0,
+	PORefLinenum smallint, -- Jum use
+	GRRefLinenum smallint, -- Jum use	 
+	ItemName	VARCHAR(1000),
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	StatusReceive SMALLINT DEFAULT 0, -- 0 = ปกติ, 1 = ของเกิน, 2 = ของแถม, 3 = ของสูญหาย, 4 = ของชำรุดจากขนส่ง, 5 = ขนส่งขาดส่ง , 6 = ชำรุดจากเจ้าหนี้
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_IRSDATE ON BCIRSUB(DOCDATE);
+CREATE  INDEX IDX_IRSCD ON BCIRSUB(APCODE);
+CREATE  INDEX IDX_IRSDEP ON BCIRSUB(DEPARTCODE);
+CREATE  INDEX IDX_IRSITEM ON BCIRSUB(ITEMCODE);
+CREATE  INDEX IDX_IRSWH ON BCIRSUB(WHCODE);
+CREATE  INDEX IDX_IRSSHLF ON BCIRSUB(SHELFCODE);
+CREATE  INDEX IDX_IRSBND ON BCIRSUB(BRANDCODE);
+CREATE  INDEX IDX_IRSGRP ON BCIRSUB(GROUPCODE);
+CREATE  INDEX IDX_IRSSTYPEC ON BCIRSUB(TYPECODE);
+CREATE  INDEX IDX_IRSFRM ON BCIRSUB(FORMATCODE);
+CREATE  INDEX IDX_IRSTS ON BCIRSUB(TransState);
+
+create table BCWeightCost
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	RefDocNo	VARCHAR(20), -- อ้างถึงเอกสารค่าใช้จ่าย
+	ExpDescription	VARCHAR(255),
+	WeightBy	SMALLINT DEFAULT 0, -- 0 = ตามปริมาณ  1=ตามมูลค่าสินค้า
+	WeightAmount	FLOAT DEFAULT 0.0, -- มูลค่าต้นทุนเงินบาท
+	MakerName	VARCHAR(255),
+	FromPo	VARCHAR(20),
+	ToPO VARCHAR(20),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	WeightCostType SMALLINT DEFAULT 0 -- 0 = ต้นทุนแฝงด้านบริหาร , 1 = ต้นทุนแฝงด้านบัญชี
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_WCOST_DATE ON BCWeightCost(DocDate);
+--CREATE  INDEX IDX_WCOST_DOCNO ON BCWeightCost(DocNo);
+
+create table BCWeightCostSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BuyDocNo	VARCHAR(20), -- บิลซื้อ
+	DocDate	DATETIME,
+	ExpCostNo	VARCHAR(20), -- เลขที่เอกสารในการ WeightCost
+	RefDocNo	VARCHAR(20), -- อ้างถึงเอกสารค่าใช้จ่าย
+	ItemCode	VARCHAR(25),
+	ItemQty	FLOAT DEFAULT 0.0, -- ปริมาณของสินค้า
+	ItemAmount	FLOAT DEFAULT 0.0, -- มูลค่าของสินค้า
+	BillLineNumber SMALLINT DEFAULT 0, -- บรรทัดสินค้าในบิลซื้อ
+	ExpDescription	VARCHAR(255),
+	LineNumber	SMALLINT DEFAULT 0,
+	BillRowOrder INT DEFAULT 0,
+	Amount	FLOAT DEFAULT 0.0, -- มูลค่าต้นทุนเงินบาท
+	WeightCostType SMALLINT DEFAULT 0 -- 0 = ต้นทุนแฝงด้านบริหาร , 1 = ต้นทุนแฝงด้านบัญชี
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_WCOSTS_NO ON BCWeightCostSub(BuyDocNo);
+CREATE  INDEX IDX_WCOSTS_EXP ON BCWeightCostSub(ExpCostNo);
+CREATE  INDEX IDX_WCOSTS_BL ON BCWeightCostSub(BillLineNumber);
+CREATE  INDEX IDX_WCOSTS_IM ON BCWeightCostSub(ItemCode);
+CREATE  INDEX IDX_WCOSTS1 ON BCWeightCostSub(DocDate);
+CREATE  INDEX IDX_WCOSTS2 ON BCWeightCostSub(RefDocNo);
+CREATE  INDEX IDX_WCOSTS3 ON BCWeightCostSub(BuyDocNo,ItemCode,LineNumber);
+CREATE  INDEX IDX_WCOSTS4 ON BCWeightCostSub(DocDate,BuyDocNo);
+
+create table BCInvStkRefund
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	StkRefundNo	VARCHAR(20), -- เลขที่ใบลดหนี้
+	ReturnFLOAT	SMALLINT	DEFAULT 0, -- 0=ไม่ 1=รับคืนเงินสด
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่ตัดยอด 1=ตัดยอดทันที
+	InvoiceNo	VARCHAR(20),	-- เลขที่ Invoice ที่จะลด
+	InvoiceDisc	VARCHAR(40),	-- ส่วนลดเดิม
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	OldAmount FLOAT DEFAULT 0.0, -- ยอดเดิม
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	DiscountAmount FLOAT DEFAULT 0.0, -- ยอดที่ลด
+	DiffAmount	FLOAT DEFAULT 0.0,	-- ยอดผลต่าง,ยอดที่จะลด เป็นรวมใน
+	ZeroTaxAmount	FLOAT DEFAULT 0.0, -- รวมยอดภาษีอัตรา 0
+	ExceptTaxAmount	FLOAT DEFAULT 0.0, --รวมยอดยกเว้นภาษี
+	TrueAmount	FLOAT DEFAULT 0.0,	-- ยอดที่ถูกต้อง OldAmount -DiffAmount-ZeroTaxAmount-ExceptTaxAmount
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * DiffAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * DiffAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0,  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	BillType	SMALLINT DEFAULT 0 -- 0=ใบส่งของ 1=เอกสารยกมา 2=ตั้งลูกหนี้อื่นๆ
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_INVSTKR_DATE ON BCInvStkRefund(DocDate);
+CREATE  INDEX IDX_INVSTKR_AP ON BCInvStkRefund(ApCode);
+CREATE  INDEX IDX_INVSTKR_NO ON BCInvStkRefund(StkRefundNo);
+CREATE  INDEX IDX_INVSTKR_INV ON BCInvStkRefund(InvoiceNo);
+			
+create table BCStkRefund
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	DueDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	SumOldAmount	FLOAT DEFAULT 0.0, -- รวมใบกำกับเดิม (เป็นเงินบาทตาม Rate ใหม่)
+	SumTrueAmount	FLOAT DEFAULT 0.0, -- รวมยอดที่ถูกต้อง (เป็นเงินบาท)
+	SumofDiffAmount	FLOAT DEFAULT 0.0, -- รวมผลต่าง เป็นรวมใน 
+	DiscountWord VARCHAR(30), -- ส่วนลดรับคืน
+	DiscountAmount FLOAT DEFAULT 0.0,  -- ส่วนลดรับคืน
+	SumofBeforeTax	FLOAT DEFAULT 0.0,  -- ยอดก่อนภาษี
+	SumOfTaxAmount	FLOAT DEFAULT 0.0, -- ยอดภาษี
+	SumOfTotalTax	FLOAT DEFAULT 0.0,  -- ยอดรวมภาษี
+	SumOfExceptTax	FLOAT DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	SumOfZeroTax FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0, -- ยอดสุทธิ SumOfTotalTax + SumOfExceptTax
+	SumExchangeProfit	FLOAT DEFAULT 0.0,  -- รวมกำไร(ขาดทุน)
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	ReturnFLOAT	SMALLINT	DEFAULT 0, -- รับคืนเงินสด
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่ตัดยอด 1=ตัดยอดทันที
+	StatementState	SMALLINT DEFAULT 0, -- 0=ยังไม่วางบิล 1=วางบิลอยู่
+	BillType	SMALLINT DEFAULT 0, -- 0=ส่งคืนสินค้า/ลดหนี้ 1=ลดหนี้อย่างเดียว(ลดหนี้ตาม IR) 2=ส่งคืนอย่างเดียว(ส่งคืนตาม GR)
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย
+	CauseCode VARCHAR(10), -- สาเหตุการส่งคืน
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	IsCNDeposit	SMALLINT DEFAULT 0 -- 1= ใบลดหนี้รับเงินมัดจำ
+    PRIMARY KEY(DocNo)
+);
+			
+CREATE  INDEX IDX_STKR_DATE ON BCStkRefund(DocDate);
+CREATE  INDEX IDX_STKR_AP ON BCStkRefund(ApCode);
+CREATE  INDEX IDX_STKR_PBS ON BCStkRefund(StatementState);
+CREATE  INDEX IDX_STKR_BAL ON BCStkRefund(BillBalance);
+CREATE  INDEX IDX_STKR_ROW	ON BCStkRefund(ROWORDER);
+CREATE  INDEX IDX_STKR1 ON BCStkRefund(DocNo,ApCode);
+CREATE  INDEX IDX_STKPNTC ON BCStkRefund(printcount);
+
+create table BCStkRefundSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 7,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	DiscQty	FLOAT DEFAULT 0.0,
+	TempQty	FLOAT DEFAULT 0.0, -- ยอดส่งคืนตามที่ Key ไม่มีผลอะไร
+	BillQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	InvoiceNo	VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	StockProcess SMALLINT DEFAULT 0, -- 0 = Update Stock and cost 1= Update cost only 2= ไม่ Update Stock
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0,  --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	SumOfCost	FLOAT DEFAULT 0.0, --aom 2003-05-22
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	ItemName	VARCHAR(1000),
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย	
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STKRSDATE ON BCStkRefundSub(DOCDATE);
+CREATE  INDEX IDX_STKRSITEM ON BCStkRefundSub(ItemCode);
+CREATE  INDEX IDX_STKRSWH ON BCStkRefundSub(WHCode);
+CREATE  INDEX IDX_STKRSSHF ON BCStkRefundSub(ShelfCode);
+CREATE  INDEX IDX_STKRSIND ON BCStkRefundSub(BehindIndex);
+CREATE  INDEX IDX_STKRSTYPE ON BCStkRefundSub(MyType);
+CREATE  INDEX IDX_STKRSTS ON BCStkRefundSub(TransState);
+CREATE  INDEX IDX_STKRSAP ON BCStkRefundSub(ApCode);
+CREATE  INDEX IDX_STKRS1 ON BCStkRefundSub(ItemCode,WHCode,ShelfCode,LineNumber);
+CREATE  INDEX IDX_STKRS2 ON BCStkRefundSub(ItemCode,UnitCode);
+CREATE  INDEX IDX_STKRS3 ON BCStkRefundSub(GroupCode);
+CREATE  INDEX IDX_STKRS4 ON BCStkRefundSub(CategoryCode);
+CREATE  INDEX IDX_STKRS5 ON BCStkRefundSub(BrandCode);
+CREATE  INDEX IDX_STKRS6 ON BCStkRefundSub(TypeCode);
+CREATE  INDEX IDX_STKRS7 ON BCStkRefundSub(FormatCode);
+CREATE  INDEX IDX_STKRS8 ON BCStkRefundSub(DocNo,ApCode);
+CREATE  INDEX IDX_STKRS_SERVICE ON BCStkRefundSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_STKRSISPROCESS ON BCStkRefundSub(ItemCode,IsProcess);
+CREATE  INDEX IDX_STKRSPAK1 ON BCStkRefundSub(PAckingRate1);
+CREATE  INDEX IDX_STKRSPAK2 ON BCStkRefundSub(PAckingRate2);
+						
+create table BCInvDebitNote2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DebitNoteNo	VARCHAR(20), -- เลขที่ใบเพิ่มหนี้
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่เพิ่มทันที 1=เพิ่มทันที
+	InvoiceNo	VARCHAR(20),	-- เลขที่ Invoice ที่จะลด
+	InvoiceDisc	VARCHAR(40),	-- ส่วนลดเดิม
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	OldAmount FLOAT DEFAULT 0.0, -- ยอดเดิม
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	DiscountAmount FLOAT DEFAULT 0.0, -- ยอดที่ลด
+	DiffAmount	FLOAT DEFAULT 0.0,	-- ยอดผลต่าง,ยอดที่จะลด เป็นรวมใน
+	ZeroTaxAmount	FLOAT DEFAULT 0.0, -- รวมยอดภาษีอัตรา 0
+	ExceptTaxAmount	FLOAT DEFAULT 0.0, --รวมยอดยกเว้นภาษี
+	TrueAmount	FLOAT DEFAULT 0.0,	-- ยอดที่ถูกต้อง OldAmount -DiffAmount-ZeroTaxAmount-ExceptTaxAmount
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * DiffAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * DiffAmount
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_INVDB2_DATE ON BCInvDebitNote2(DocDate);
+CREATE  INDEX IDX_INVDB2_AP ON BCInvDebitNote2(ApCode);
+CREATE  INDEX IDX_INVDB2_NO ON BCInvDebitNote2(DebitNoteNo);
+CREATE  INDEX IDX_INVDB2_INV ON BCInvDebitNote2(InvoiceNo);
+CREATE  INDEX IDX_INVDB2_1 ON BCInvDebitNote2(InvoiceNo,ApCode);
+CREATE  INDEX IDX_INVDB2_2 ON BCInvDebitNote2(DebitNoteNo,ApCode);
+CREATE  INDEX IDX_INVDB2_3 ON BCInvDebitNote2(DOcDate,ApCode);
+			
+create table BCDebitNote2 --ใบเพิ่มหนี้(เจ้าหนี้)
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- รวมยอดของรายการสินค้า ตามสินค้าที่คิดภาษี
+	SumOldAmount	FLOAT DEFAULT 0.0, -- รวมใบกำกับเดิม (เป็นเงินบาทตาม Rate ใหม่)
+	SumTrueAmount	FLOAT DEFAULT 0.0, -- รวมยอดที่ถูกต้อง (เป็นเงินบาท)
+	SumofDiffAmount	FLOAT DEFAULT 0.0, -- รวมผลต่าง เป็นรวมใน 
+	SumofBeforeTax	FLOAT DEFAULT 0.0,  -- ยอดก่อนภาษี
+	SumOfTaxAmount	FLOAT DEFAULT 0.0, -- ยอดภาษี
+	SumOfTotalTax	FLOAT DEFAULT 0.0,  -- ยอดรวมภาษี
+	SumOfExceptTax	FLOAT DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	SumOfZeroTax FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	DiscountWord VARCHAR(30), -- ส่วนลด
+	DiscountAmount FLOAT DEFAULT 0.0,  -- ส่วนลด
+	NetDebtAmount	FLOAT DEFAULT 0.0, -- ยอดสุทธิ SumOfTotalTax + SumOfExceptTax
+	SumExchangeProfit	FLOAT DEFAULT 0.0,  -- รวมกำไร(ขาดทุน)
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	ReturnStatus	SMALLINT	DEFAULT 0, -- 0=ไม่เพิ่มทันที 1=เพิ่มทันที
+	StatementState	SMALLINT DEFAULT 0, -- 0=ยังไม่วางบิล 1=วางบิลอยู่
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย
+	CauseCode VARCHAR(10), -- สาเหตุการเพิ่มหนี้
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayBillAmount FLOAT DEFAULT 0.0, -- มูลค่าวางบิล
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_DB2_DATE ON BCDebitNote2(DocDate);
+CREATE  INDEX IDX_DB2_AP ON BCDebitNote2(ApCode);
+CREATE  INDEX IDX_DB2_PBS ON BCDebitNote2(StatementState);
+CREATE  INDEX IDX_DB2_BAL ON BCDebitNote2(BillBalance);
+CREATE  INDEX IDX_DB2_ROW	ON BCDebitNote2(ROWORDER);
+CREATE  INDEX IDX_DB21 ON BCDebitNote2(ApCode,DocNo);
+CREATE  INDEX IDX_DB22 ON BCDebitNote2(ApCode,DocDate);
+CREATE  INDEX IDX_DB23 ON BCDebitNote2(TaxNo);
+CREATE  INDEX IDX_DBPNTC ON BCDebitNote2(printcount);
+		
+create table BCDebitNoteSub2 -- 
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=ปกติ ใช้เพื่อ Sort ในรายงาน Stock Card คือ DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 3,
+	DocNo	VARCHAR(20),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	DiscQty	FLOAT DEFAULT 0.0,
+	TempQty	FLOAT DEFAULT 0.0, -- ยอดส่งคืนตามที่ Key ไม่มีผลอะไร
+	BillQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	InvoiceNo	VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	StockProcess SMALLINT DEFAULT 0, -- 0 = Update Stock and cost 1= Update cost only 2= ไม่ Update Stock
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	FixUnitCost	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	FixUnitQty	FLOAT DEFAULT 0.0, --Auto Packing Section by นก
+	AVERAGECOST	FLOAT DEFAULT 0.0,
+	LotNumber	VARCHAR(50), -- Jeab 2003-04-24 Lot กำหนดเอง
+	LotExpireDate	DATETIME,-- Jeab 2003-04-26 Lot กำหนดเอง
+	LotMyDesc	VARCHAR(1000), -- Jeab 2003-04-26 Lot กำหนดเอง
+	SumOfCost	FLOAT DEFAULT 0.0, --aom 2003-05-22
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	ItemName	VARCHAR(1000),
+	CauseType	SMALLINT	DEFAULT 0, -- 0=รับคืนสินค้า  1=ราคาผิด  2=สินค้าแตกเสียหาย	
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_DB2SDATE ON BCDebitNoteSub2(DOCDATE);
+CREATE  INDEX IDX_DB2SITEM ON BCDebitNoteSub2(ItemCode);
+CREATE  INDEX IDX_DB2SWH ON BCDebitNoteSub2(WHCode);
+CREATE  INDEX IDX_DB2SSHF ON BCDebitNoteSub2(ShelfCode);
+CREATE  INDEX IDX_DB2SIND ON BCDebitNoteSub2(BehindIndex);
+CREATE  INDEX IDX_DB2STYPE ON BCDebitNoteSub2(MyType);
+CREATE  INDEX IDX_DB2STS ON BCDebitNoteSub2(TransState);
+CREATE  INDEX IDX_DB2SAP ON BCDebitNoteSub2(ApCode);
+CREATE  INDEX IDX_DB2S1 ON BCDebitNoteSub2(ItemCode,WHcode,ShelfCode,Linenumber);
+CREATE  INDEX IDX_DB2S2 ON BCDebitNoteSub2(ItemCode,UnitCode);
+CREATE  INDEX IDX_DB2S3 ON BCDebitNoteSub2(ApCode,DocNo);
+CREATE  INDEX IDX_DB2S4 ON BCDebitNoteSub2(ApCode,DocDate);
+CREATE  INDEX IDX_DB2SSERVICE ON BCDebitNoteSub2(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_DB2SPAK1 ON BCDebitNoteSub2(PackingRate1);
+CREATE  INDEX IDX_DB2SPAK2 ON BCDebitNoteSub2(PackingRate2);
+
+
+create table BCPurchaseOrder
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0, -- รับสินค้าภายใน
+	DueDate	DATETIME, -- วันที่ครบกำหนดสินค้า
+	LeadTime	SMALLINT DEFAULT 0, -- ระยะเวลาขนส่ง
+	LeadDate	DATETIME, -- วันที่รับสินค้า
+	ExpireCredit SMALLINT DEFAULT 0, -- หมดอายุภายใน
+	ExpireDate DATETIME , -- วันที่หมดอายุ
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	PoStatus	SMALLINT DEFAULT 0, -- 0=ใหม่ 1=Sent 2=รับเต็ม 3=รับบางส่วน 4=ยกเลิก
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่หมด 1=หมดแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	BillGroup	VARCHAR(15),
+	ContactCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsConditionSend SMALLINT DEFAULT 0, -- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	OrderToArCode VARCHAR(20), -- สั่งซื้อให้กับลูกค้า
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	IsImport SMALLINT DEFAULT 0 -- 1= ข้อมูลที่ Import เข้ามา
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_PO_DATE ON BCPurchaseOrder(DocDate);
+CREATE  INDEX IDX_PO_AP ON BCPurchaseOrder(ApCode);
+CREATE  INDEX IDX_PO_DUE ON BCPurchaseOrder(DueDate);
+CREATE  INDEX IDX_PO_BS ON BCPurchaseOrder(BillStatus);
+CREATE  INDEX IDX_PO_ROW ON BCPurchaseOrder(ROWORDER);
+CREATE  INDEX IDX_PO1 ON BCPurchaseOrder(DocNo,ApCode);
+CREATE  INDEX IDX_PO2 ON BCPurchaseOrder(DocDate,ApCode);
+CREATE  INDEX IDX_PO3 ON BCPurchaseOrder(DueDate,ApCode);
+CREATE  INDEX IDX_POPNTC ON BCPurchaseOrder(printcount);
+	 		
+create table BCPurchaseOrderSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	StkReqNo VARCHAR(20),
+	ConfirmNo VARCHAR(20),
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	IsPromotion SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0,   --PR Approved line number 
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for bcservice
+	BehindIndex	SMALLINT DEFAULT 1, 
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_POS_DATE ON BCPurchaseOrderSub(DocDate);
+CREATE  INDEX IDX_POS_AP ON BCPurchaseOrderSub(ApCode);
+CREATE  INDEX IDX_POS_RQTY	ON BCPurchaseOrderSub(RemainQty);
+CREATE  INDEX IDX_POS_TS ON BCPurchaseOrderSub(TransState);
+CREATE  INDEX IDX_POS_REF ON BCPurchaseOrderSub(StkReqNo);
+CREATE  INDEX IDX_POS1 ON BCPurchaseOrderSub(ItemCode,WhCode,ShelfCode,LineNumber);
+CREATE  INDEX IDX_POS2 ON BCPurchaseOrderSub(DocNo,ItemCode);
+CREATE  INDEX IDX_POSSERVICE ON BCPurchaseOrderSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_POSISPROCESS ON BCPurchaseOrderSub(ItemCode,IsProcess);
+CREATE  INDEX IDX_POSPAK1 ON BCPurchaseOrderSub(PackingRate1);
+CREATE  INDEX IDX_POSPAK2 ON BCPurchaseOrderSub(PackingRate2);
+
+create table BCStkRequest -- ใบขอซื้อสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	DepartCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	WorkMan	VARCHAR(255),
+	BillStatus	SMALLINT DEFAULT 0, --0=ยัง 1=หมด
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	BillGroup	VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	ApCode	VARCHAR(20), -- Jeab 2003-04-19 ------- A&L ----------
+	SaleApproved	VARCHAR(10),
+	WorkSite	VARCHAR(255),
+	Amount FLOAT default 0.0
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_SRQ_DATE ON BCStkRequest(DocDate);
+CREATE  INDEX IDX_SRQ_BS ON BCStkRequest(BillStatus);
+CREATE  INDEX IDX_SRQ_ROW	ON BCStkRequest(ROWORDER);
+CREATE  INDEX IDX_SRQ1	ON BCStkRequest(Docdate,DocNo);
+CREATE  INDEX IDX_SRQPNTC	ON BCStkRequest(printcount);
+ 		
+
+create table BCStkRequestSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือที่ยังไม่อนุมัติ
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	Priority SMALLINT DEFAULT 0, -- 0=ปกติ 1=ด่วนมาก
+	WantDay SMALLINT DEFAULT 0, -- ต้องการสินค้าภายในกี่วัน
+	WantDate DATETIME, --ลงวันที่ที่ต้องการ
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	LineNumber SMALLINT DEFAULT 0,
+	BarCode	VARCHAR(20),
+	ItemName	VARCHAR(1000), ------- Jeab 2003-05-08------
+	Colorcode VARCHAR(10),
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 MONEY DEFAULT 0.0,
+	PackingRate2 MONEY DEFAULT 0.0,
+	BehindIndex	SMALLINT DEFAULT 1,
+	Price FLOAT default 0.0,
+	Amount FLOAT default 0.0	
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_SRQS_DATE ON BCStkRequestSub(DocDate);
+CREATE  INDEX IDX_SRQS_DOC ON BCStkRequestSub(DocNo);
+CREATE  INDEX IDX_SRQS_RQTY	ON BCStkRequestSub(RemainQty);
+CREATE  INDEX IDX_SRQS1	ON BCStkRequestSub(ItemCode,UnitCode,LineNumber);
+CREATE  INDEX IDX_SRQS2	ON BCStkRequestSub(LineNumber);
+CREATE  INDEX IDX_SRQS3	ON BCStkRequestSub(BarCode);
+CREATE  INDEX IDX_SRQS4	ON BCStkRequestSub(DocNo,DocDate);
+CREATE  INDEX IDX_SRQSPAK1 ON BCStkRequestSub(PackingRate1);
+CREATE  INDEX IDX_SRQSPAK2 ON BCStkRequestSub(PackingRate2);
+
+create table BCReqConfirm -- ใบอนุมัติซื้อสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	ConfirmName	VARCHAR(255),
+	MyDescription	VARCHAR(1000),
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ปกติ 1=หมด
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	Amount FLOAT default 0.0
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_REQC1	ON BCReqConfirm(DocNo,DocDate);
+CREATE  INDEX IDX_REQC2	ON BCReqConfirm(DocDate);
+
+create table BCReqConfirmSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ItemCode	VARCHAR(25),
+	StkRequestNo	VARCHAR(20), -- เลขที่ใบเสนอซื้อ
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดที่ขอ
+	ConfirmQty	FLOAT DEFAULT 0.0, -- ยอดที่อนุมัติ
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือสั่งซื้อ
+	UnitCode	VARCHAR(10),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- อ้างใบเสนอซื้อ
+	BarCode	VARCHAR(20),
+	Colorcode VARCHAR(10),
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),	
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 MONEY DEFAULT 0.0,
+	PackingRate2 MONEY DEFAULT 0.0,
+	BehindIndex	SMALLINT DEFAULT 1,
+	Price FLOAT default 0.0,
+	Amount FLOAT default 0.0
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_REQCS1	ON BCReqConfirmSub(DocNo,DocDate);
+CREATE  INDEX IDX_REQCS2	ON BCReqConfirmSub(DocNo);
+CREATE  INDEX IDX_REQCS3	ON BCReqConfirmSub(ItemCode);
+CREATE  INDEX IDX_REQCS4	ON BCReqConfirmSub(DocNo,ItemCode);
+CREATE  INDEX IDX_REQCS5	ON BCReqConfirmSub(DocNo,LineNumber);
+CREATE  INDEX IDX_REQCS6	ON BCReqConfirmSub(LineNumber);
+CREATE  INDEX IDX_REQCSPAK1	ON BCReqConfirmSub(PackingRate1);
+CREATE  INDEX IDX_REQCSPAK2	ON BCReqConfirmSub(PackingRate2);
+
+create table BCEnquirePrice -- ใบสืบราคารวม
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	ReqConfirmNo VARCHAR(20) ,
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ปกติ 1=หมด
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	CreatorCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CreateDateTime	DATETIME
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_EQP1	ON BCEnquirePrice(DocDate);
+
+
+create table BCEnquirePriceSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	StkRequestNo	VARCHAR(20), -- เลขที่ใบเสนอซื้อ
+	DepartCode	VARCHAR(10),
+	SupplierCode VARCHAR(20), -- รหัส Supplier ตามที่ตั้งไว้ใน BCITEM Master
+	ItemCode	VARCHAR(25),
+	MyDescription	VARCHAR(255),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดที่จะสืบราคา
+	UnitCode	VARCHAR(10),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	ItemType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	LineNumber SMALLINT DEFAULT 0,
+	BarCode	VARCHAR(20),
+--for bcservice
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 MONEY DEFAULT 0.0,
+	PackingRate2 MONEY DEFAULT 0.0,
+	BehindIndex	SMALLINT DEFAULT 1
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCAPDeposit
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	TaxNo	VARCHAR(20),
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	RefNo	VARCHAR(20),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsReturnFLOAT SMALLINT DEFAULT 0, -- 1=ลดหนี้หรือคืนเงิน
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_APDEP_DATE ON BCAPDeposit(DocDate);
+CREATE  INDEX IDX_APDEP_AP ON BCAPDeposit(ApCode);
+CREATE  INDEX IDX_APDEP_BAL ON BCAPDeposit(BillBalance);
+CREATE  INDEX IDX_APDEP_PNTC ON BCAPDeposit(printcount);
+
+create table BCStatement
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยัง 1=หมด
+	CreditDay	SMALLINT DEFAULT 0,
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	DueDate	DATETIME,
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME,
+	IsCancel  SMALLINT DEFAULT 0 --jum
+PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_STM_DATE ON BCStatement(DocDate);
+CREATE  INDEX IDX_STM_AP ON BCStatement(ApCode);
+CREATE  INDEX IDX_STM_BS ON BCStatement(BillStatus);
+			
+create table BCStatementSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	PayBalance FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT,
+	HomeAmount FLOAT DEFAULT 0.0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_STMS_NO ON BCStatementSub(DocNo);
+CREATE  INDEX IDX_STMS_DATE ON BCStatementSub(DocDate);
+CREATE  INDEX IDX_STMS_AP ON BCStatementSub(ApCode);
+CREATE  INDEX IDX_STMS_PBAL ON BCStatementSub(PayBalance);
+CREATE  INDEX IDX_STMS_INVN ON BCStatementSub(InvoiceNo);
+			
+create table BCPayment --ใบจ่ายชำระหนี้
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดเจ้าหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	SumOfDeposit1	FLOAT DEFAULT 0.0, -- Jeab 20030530 สำหรับตัดยอดของบิล
+	SumOfDeposit2	FLOAT DEFAULT 0.0, -- Jeab 20030530 สำหรับ post GL 
+	HomeAmountInv	FLOAT DEFAULT 0.0,
+	HomeAmountDebt	FLOAT DEFAULT 0.0,
+	HomeAmountCrd	FLOAT DEFAULT 0.0,
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	SumOfEarnest FLOAT DEFAULT 0.0 -- ยอดเงินล่วงหน้า
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_PYM_DATE ON BCPayment(DocDate);
+CREATE  INDEX IDX_PYM_AP ON BCPayment(ApCode);
+CREATE  INDEX IDX_PYM_PNTC ON BCPayment(printcount);
+			
+create table BCPaymentSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	BillType	SMALLINT DEFAULT 0, 
+	PaybillNo	VARCHAR(20),
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบรับวางบิล 1=ใบเตรียมจ่ายค่าสินค้าว	
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PYMS_NO ON BCPaymentSub(DocNo);
+CREATE  INDEX IDX_PYMS_DATE ON BCPaymentSub(DocDate);
+CREATE  INDEX IDX_PYMS_AP ON BCPaymentSub(ApCode);
+CREATE  INDEX IDX_PYMS_TS ON BCPaymentSub(TransState);
+CREATE  INDEX IDX_PYMS_INVNO ON BCPaymentSub(InvoiceNo);
+
+
+create table BCPaySubTemp
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	BillType	SMALLINT DEFAULT 0,
+	PaybillNo	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PYMST_NO ON BCPaySubTemp(DocNo);
+
+create table BCPayment2 --บันทึกตัดยอดเจ้าหนี้สูญ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดเจ้าหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_PYM2_DATE ON BCPayment2(DocDate);
+CREATE  INDEX IDX_PYM2_AP ON BCPayment2(ApCode);
+CREATE  INDEX IDX_PYM2_PNTC ON BCPayment2(printcount);
+			
+create table BCPaymentSub2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	BillType	SMALLINT DEFAULT 0,
+	PaybillNo	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PYMS2_NO ON BCPaymentSub2(DocNo);
+CREATE  INDEX IDX_PYMS2_DATE ON BCPaymentSub2(DocDate);
+CREATE  INDEX IDX_PYMS2_AP ON BCPaymentSub2(ApCode);
+CREATE  INDEX IDX_PYMS2_TS ON BCPaymentSub2(TransState);
+CREATE  INDEX IDX_PYMS2_INVNO ON BCPaymentSub2(InvoiceNo);
+
+create table BCChqIn
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10),
+	ChqNumber	VARCHAR(20),
+	DocNo	VARCHAR(20),
+	ArCode	VARCHAR(20),
+	ExtendStatus	VARCHAR(10),	--รหัสสถานะเพิ่มเติม
+	SaleCode	VARCHAR(10),
+	ReceiveDate	DATETIME,
+	DueDate	DATETIME,
+	BookNo	VARCHAR(30),
+	Status	SMALLINT DEFAULT 0,
+	SaveFrom	SMALLINT DEFAULT 0,
+	StatusDate	DATETIME,
+	StatusDocNo	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	Amount	FLOAT DEFAULT 0.0,
+	Balance 	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	ChqUseStatus SMALLINT DEFAULT 0, -- 0=ปกติ 1=ตัดหลายใบเสร็จ
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	RECIVECHQBY	varchar(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	RECIVECONFIRM	smallint
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHQI_BANK ON BCChqIn(BankCode);
+CREATE  INDEX IDX_CHQI_NO ON BCChqIn(ChqNumber);
+CREATE  INDEX IDX_CHQI_DNO ON BCChqIn(DocNo);
+CREATE  INDEX IDX_CHQI_AR ON BCChqIn(ArCode);
+CREATE  INDEX IDX_CHQI_SALE ON BCChqIn(SaleCode);
+CREATE  INDEX IDX_CHQI_RED ON BCChqIn(ReceiveDate);
+CREATE  INDEX IDX_CHQI_DUE ON BCChqIn(DueDate);
+CREATE  INDEX IDX_CHQI_BNO ON BCChqIn(BookNo);
+CREATE  INDEX IDX_CHQI_ST ON BCChqIn(Status);
+			
+create table BCChqOut
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10),
+	ChqNumber	VARCHAR(20),
+	DocNo	VARCHAR(20),
+	ApCode	VARCHAR(20),
+	ExtendStatus	VARCHAR(10),	--รหัสสถานะเพิ่มเติม	
+	PaymentDate	DATETIME,
+	DueDate	DATETIME,
+	BookNo	VARCHAR(30),
+	Status	SMALLINT DEFAULT 0,
+	SaveFrom	SMALLINT DEFAULT 0,
+	StatusDate	DATETIME,
+	StatusDocNo	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	Amount	FLOAT DEFAULT 0.0,
+	Balance 	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	ChqUseStatus SMALLINT DEFAULT 0, -- 0=ปกติ 1=ตัดหลายใบเสร็จ
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+CREATE  INDEX IDX_CHQO_BANK ON BCChqOut(BankCode);
+CREATE  INDEX IDX_CHQO_NO ON BCChqOut(ChqNumber);
+CREATE  INDEX IDX_CHQO_DNO ON BCChqOut(DocNo);
+CREATE  INDEX IDX_CHQO_AP ON BCChqOut(ApCode);
+CREATE  INDEX IDX_CHQO_PYD ON BCChqOut(PaymentDate);
+CREATE  INDEX IDX_CHQO_DUE ON BCChqOut(DueDate);
+CREATE  INDEX IDX_CHQO_BNO ON BCChqOut(BookNo);
+CREATE  INDEX IDX_CHQO_ST ON BCChqOut(Status);
+
+create table BCCreditCard
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10),
+	CreditCardNo	VARCHAR(20),
+	DocNo	VARCHAR(20),
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	ReceiveDate	DATETIME,
+	DueDate	DATETIME,
+	BookNo	VARCHAR(30),
+	Status	SMALLINT DEFAULT 0,
+	SaveFrom	SMALLINT DEFAULT 0,
+	StatusDate	DATETIME,
+	StatusDocNo	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	BankBranchCode	VARCHAR(10),
+	Amount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	CreditType	VARCHAR(10),
+	ConfirmNo	VARCHAR(20),
+	ChargeAmount FLOAT DEFAULT 0.0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	CreditVatRate	FLOAT DEFAULT 0.0, -- อัตราภาษีที่คิดค่า ชาร์ดบัตรเครดิต
+	CreditVat	FLOAT DEFAULT 0.0, -- ภาษีที่ได้จากการคิดค่า ชาร์ดบัตรเครดิต
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CreditSumVat	FLOAT DEFAULT 0.0-- มูลค่ารวมค่าชาร์ดบัตรเครดิต
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CRD_BANK ON BCCreditCard(BankCode);
+CREATE  INDEX IDX_CRD_NO ON BCCreditCard(CreditCardNo);
+CREATE  INDEX IDX_CRD_DNO ON BCCreditCard(DocNo);
+CREATE  INDEX IDX_CRD_AR ON BCCreditCard(ArCode);
+CREATE  INDEX IDX_CRD_SALE ON BCCreditCard(SaleCode);
+CREATE  INDEX IDX_CRD_RED ON BCCreditCard(ReceiveDate);
+CREATE  INDEX IDX_CRD_DUE ON BCCreditCard(DueDate);
+CREATE  INDEX IDX_CRD_BNO ON BCCreditCard(BookNo);
+CREATE  INDEX IDX_CRD_ST ON BCCreditCard(Status);
+
+create table BCOtherIncome
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumofDebit	FLOAT DEFAULT 0.0,
+	SumofCredit	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	ArCode	VARCHAR(20),
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillGroup	VARCHAR(10),
+	IsConfirm	 SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_OTHI_DATE ON BCOtherIncome(DocDate);
+CREATE  INDEX IDX_OTHI_AR ON BCOtherIncome(ArCode);
+			
+create table BCOtherExpense2 -- เงินทดลองจ่าย
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumofAmount	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	ApCode	VARCHAR(20),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	GLTransData	SMALLINT DEFAULT 0, -- 0=auto 1=manual
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	PersonCode VARCHAR(10), -- รหัสพนักงานผู้เบิก
+	BillStatus SMALLINT DEFAULT 0, -- 0=ยังไม่เคลียร์เงินทดลองจ่าย
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_OTHE2_DATE ON BCOtherExpense2(DocDate);
+CREATE  INDEX IDX_OTHE2_AP ON BCOtherExpense2(ApCode);
+
+create table BCOtherExpSub2
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	Amount	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	ApCode	VARCHAR(20)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_OTHES2_DATE ON BCOtherExpSub2(DocDate);
+CREATE  INDEX IDX_OTHES2_AP ON BCOtherExpSub2(ApCode);
+
+create table BCOtherExpense
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	RefDocNo VARCHAR(20), -- เลขที่ใบทดลองจ่าย
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	SumofDebit	FLOAT DEFAULT 0.0,
+	SumofCredit	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	ApCode	VARCHAR(20),
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillGroup	VARCHAR(10),
+	IsConfirm	 SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_OTHE_DATE ON BCOtherExpense(DocDate);
+CREATE  INDEX IDX_OTHE_AP ON BCOtherExpense(ApCode);
+
+create table BCBankTransfer
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	FromBook	VARCHAR(30),
+	ToBook	VARCHAR(30),
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	MyDescription	VARCHAR(1000),
+	Amount	FLOAT DEFAULT 0.0,
+	RecurName	VARCHAR(40),
+	IsConfirm	 SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_BNTF_DATE ON BCBankTransfer(DocDate);
+CREATE  INDEX IDX_BNTF_FB ON BCBankTransfer(FromBook);
+CREATE  INDEX IDX_BNTF_TB ON BCBankTransfer(ToBook);
+
+create table BCCashBankIn
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	AccountCode VARCHAR(20),
+	GLBookCode	VARCHAR(5),
+	IsBankBalance SMALLINT DEFAULT 0, -- บันทึกยอดเงินยกมา
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode VARCHAR(10),
+	MyDescription VARCHAR(255),
+	Amount FLOAT DEFAULT 0.0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsConfirm	 SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CSHBI_DATE ON BCCashBankIn(DocDate);
+CREATE  INDEX IDX_CSHBI_BNO ON BCCashBankIn(BookNo);
+
+create table BCCashBankOut
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	AccountCode VARCHAR(20),
+	GLBookCode	VARCHAR(5),
+	IsBankBalance SMALLINT DEFAULT 0, -- บันทึกยอดเงินยกมา
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode VARCHAR(10),
+	MyDescription VARCHAR(255),
+	Amount FLOAT,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsConfirm	 SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CSHBO_DATE ON BCCashBankOut(DocDate);
+CREATE  INDEX IDX_CSHBO_BNO ON BCCashBankOut(BookNo);
+
+create table BCBankExpense
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	AccountCode VARCHAR(20),
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode VARCHAR(10),
+	MyDescription VARCHAR(255),
+	Amount FLOAT,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsConfirm	 SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_BNKE_DATE ON BCBankExpense(DocDate);
+CREATE  INDEX IDX_BNKE_BNO ON BCBankExpense(BookNo);
+
+create table BCBankIncome
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	AccountCode VARCHAR(20),
+	GLBookCode	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	DepartCode VARCHAR(10),
+	MyDescription VARCHAR(255),
+	Amount FLOAT,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsConfirm	 SMALLINT DEFAULT 0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_BNKI_DATE ON BCBankIncome(DocDate);
+CREATE  INDEX IDX_BNKI_BNO ON BCBankIncome(BookNo);
+
+create table BCChqInDeposit -- เช็คฝาก
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHID_DATE ON BCChqInDeposit(DocDate);
+CREATE  INDEX IDX_CHID_BNO ON BCChqInDeposit(BookNo);
+
+create table BCChqInDeposSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	OrgChqStatus SMALLINT DEFAULT 0,
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHIDS_NO ON BCChqInDeposSub(DocNo);
+CREATE  INDEX IDX_CHIDS_DATE ON BCChqInDeposSub(DocDate);
+CREATE  INDEX IDX_CHIDS_BNO ON BCChqInDeposSub(BookNo);
+CREATE  INDEX IDX_CHIDS_CNO ON BCChqInDeposSub(ChqNumber);
+CREATE  INDEX IDX_CHIDS_TS ON BCChqInDeposSub(TransState);
+
+create table BCChqInDeposit2 -- เช็คนำเข้าธนาคารอีกครั้ง
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHIDPS_DATE ON BCChqInDeposit2(DocDate);
+CREATE  INDEX IDX_CHIDPS_BNO ON BCChqInDeposit2(BookNo);
+
+create table BCChqInDepo2Sub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)	
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHID2S_NO ON BCChqInDepo2Sub(DocNo);
+CREATE  INDEX IDX_CHID2S_DATE ON BCChqInDepo2Sub(DocDate);
+CREATE  INDEX IDX_CHID2S_BNO ON BCChqInDepo2Sub(BookNo);
+CREATE  INDEX IDX_CHID2S_CNO ON BCChqInDepo2Sub(ChqNumber);
+CREATE  INDEX IDX_CHID2S_TS ON BCChqInDepo2Sub(TransState);
+
+create table BCChqInPass
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0, -- ยอดเงินบาท
+	SumExpend	FLOAT DEFAULT 0.0,  -- ยอดเงินบาท
+	NetAmount	FLOAT DEFAULT 0.0,  -- Sum HomeAmount ยอดเงินบาท
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHIP_DATE ON BCChqInPass(DocDate);
+CREATE  INDEX IDX_CHIP_BNO ON BCChqInPass(BookNo);
+
+create table BCChqInPassSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0, -- เป็นเงินบาท
+	NetAmount	FLOAT DEFAULT 0.0, -- เป็นเงินบาท HomeAmount - Expend
+	CurrencyCode	VARCHAR(10), 
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	OrgChqStatus SMALLINT DEFAULT 0,
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHIPS_NO ON BCChqInPassSub(DocNo);
+CREATE  INDEX IDX_CHIPS_DATE ON BCChqInPassSub(DocDate);
+CREATE  INDEX IDX_CHIPS_BNO ON BCChqInPassSub(BookNo);
+CREATE  INDEX IDX_CHIPS_CNO ON BCChqInPassSub(ChqNumber);
+CREATE  INDEX IDX_CHIPS_TS ON BCChqInPassSub(TransState);
+
+create table BCChqInCancel
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	CancelStatus SMALLINT DEFAULT 0, -- 0 = ยกเลิกจากเช็คในมือ 1= ยอกเลิกจากเช็คผ่าน
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHIC_DATE ON BCChqInCancel(DocDate);
+CREATE  INDEX IDX_CHIC_BNO ON BCChqInCancel(BookNo);
+
+create table BCChqInCancelSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	CancelStatus SMALLINT DEFAULT 0, -- 0 = ยกเลิกจากเช็คในมือ 1= ยอกเลิกจากเช็คผ่าน
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)	
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHICS_NO ON BCChqInCancelSub(DocNo);
+CREATE  INDEX IDX_CHICS_DATE ON BCChqInCancelSub(DocDate);
+CREATE  INDEX IDX_CHICS_BNO ON BCChqInCancelSub(BookNo);
+CREATE  INDEX IDX_CHICS_CNO ON BCChqInCancelSub(ChqNumber);
+CREATE  INDEX IDX_CHICS_TS ON BCChqInCancelSub(TransState);
+
+create table BCChqInReturn -- เช็คคืน
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHIR_DATE ON BCChqInReturn(DocDate);
+CREATE  INDEX IDX_CHIR_BNO ON BCChqInReturn(BookNo);
+
+create table BCChqInRetSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHIRS_NO ON BCChqInRetSub(DocNo);
+CREATE  INDEX IDX_CHIRS_DATE ON BCChqInRetSub(DocDate);
+CREATE  INDEX IDX_CHIRS_BNO ON BCChqInRetSub(BookNo);
+CREATE  INDEX IDX_CHIRS_CNO ON BCChqInRetSub(ChqNumber);
+CREATE  INDEX IDX_CHIRS_TS ON BCChqInRetSub(TransState);
+
+create table BCChqInSale
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHIS_DATE ON BCChqInSale(DocDate);
+CREATE  INDEX IDX_CHIS_BNO ON BCChqInSale(BookNo);
+
+create table BCChqInSaleSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	Arcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHISS_NO ON BCChqInSaleSub(DocNo);
+CREATE  INDEX IDX_CHISS_DATE ON BCChqInSaleSub(DocDate);
+CREATE  INDEX IDX_CHISS_BNO ON BCChqInSaleSub(BookNo);
+CREATE  INDEX IDX_CHISS_CNO ON BCChqInSaleSub(ChqNumber);
+CREATE  INDEX IDX_CHISS_TS ON BCChqInSaleSub(TransState);
+
+create table BCChqOutPass
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHOP_DATE ON BCChqOutPass(DocDate);
+CREATE  INDEX IDX_CHOP_BNO ON BCChqOutPass(BookNo);
+
+create table BCChqOutPassSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	APcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)	
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHOPS_NO ON BCChqOutPassSub(DocNo);
+CREATE  INDEX IDX_CHOPS_DATE ON BCChqOutPassSub(DocDate);
+CREATE  INDEX IDX_CHOPS_BNO ON BCChqOutPassSub(BookNo);
+CREATE  INDEX IDX_CHOPS_CNO ON BCChqOutPassSub(ChqNumber);
+CREATE  INDEX IDX_CHOPS_TS ON BCChqOutPassSub(TransState);
+
+create table BCChqOutCancel
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	CancelStatus SMALLINT DEFAULT 0, -- 0 = ยกเลิกจากเช็คในมือ 1= ยกเลิกจากเช็คผ่าน
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CHOC_DATE ON BCChqOutCancel(DocDate);
+CREATE  INDEX IDX_CHOC_BNO ON BCChqOutCancel(BookNo);
+
+create table BCChqOutCancelSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	ChqRowOrder	INT,
+	CancelStatus SMALLINT DEFAULT 0, -- 0 = ยกเลิกจากเช็คในมือ 1= ยอกเลิกจากเช็คผ่าน
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	ChqNumber	VARCHAR(20),
+	ChqAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	APcode varchar(20),
+	Bankcode varchar(10),
+	BankBranchCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CHOCS_NO ON BCChqOutCancelSub(DocNo);
+CREATE  INDEX IDX_CHOCS_DATE ON BCChqOutCancelSub(DocDate);
+CREATE  INDEX IDX_CHOCS_BNO ON BCChqOutCancelSub(BookNo);
+CREATE  INDEX IDX_CHOCS_CNO ON BCChqOutCancelSub(ChqNumber);
+CREATE  INDEX IDX_CHOCS_TS ON BCChqOutCancelSub(TransState);
+
+create table BCCreditPass
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	TaxRate	FLOAT DEFAULT 7.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CRP_DATE ON BCCreditPass(DocDate);
+CREATE  INDEX IDX_CRP_BNO ON BCCreditPass(BookNo);
+
+create table BCCreditPassSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	CreditRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	CreditNumber	VARCHAR(20),
+	CreditAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0 -- NetAmount * ExchangeRate	
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CCRPS_NO ON BCCreditPassSub(DocNo);
+CREATE  INDEX IDX_CCRPS_DATE ON BCCreditPassSub(DocDate);
+CREATE  INDEX IDX_CCRPS_BNO ON BCCreditPassSub(BookNo);
+CREATE  INDEX IDX_CCRPS_CNO ON BCCreditPassSub(CreditNumber);
+CREATE  INDEX IDX_CCRPS_TS ON BCCreditPassSub(TransState);
+
+create table BCCreditCancel
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	BookNo	VARCHAR(30),
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumExpend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	IsConfirm	 SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DOCNO)
+);
+
+CREATE  INDEX IDX_CRC_DATE ON BCCreditCancel(DocDate);
+CREATE  INDEX IDX_CRC_BNO ON BCCreditCancel(BookNo);
+
+create table BCCreditCancelSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	BookNo	VARCHAR(30),
+	CreditRowOrder	INT,
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	CreditNumber	VARCHAR(20),
+	CreditAmount	FLOAT DEFAULT 0.0,
+	Expend	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	HomeAmount FLOAT DEFAULT 0.0 -- NetAmount * ExchangeRate
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_CCRCS_NO ON BCCreditCancelSub(DocNo);
+CREATE  INDEX IDX_CCRCS_DATE ON BCCreditCancelSub(DocDate);
+CREATE  INDEX IDX_CCRCS_BNO ON BCCreditCancelSub(BookNo);
+CREATE  INDEX IDX_CCRCS_CNO ON BCCreditCancelSub(CreditNumber);
+CREATE  INDEX IDX_CCRCS_TS ON BCCreditCancelSub(TransState);
+
+create table BCPettyCash
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(255),
+	Amount	FLOAT DEFAULT 0.0,
+	BeginAmount	FLOAT DEFAULT 0.0,
+	Balance	FLOAT DEFAULT 0.0
+    PRIMARY KEY(Code)
+);
+
+create table BCOutputTax
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	SaveFrom	SMALLINT DEFAULT 0,
+	DocNo	VARCHAR(20),
+	BookCode	VARCHAR(15),
+	Source		 SMALLINT DEFAULT 0,
+	DocDate	DATETIME,
+	TaxDate	DATETIME,
+	TaxNo	VARCHAR(20),
+	ArCode	VARCHAR(20),
+	ShortTaxDesc	VARCHAR(255),
+	TaxRate	FLOAT DEFAULT 7.0,
+	Process	SMALLINT DEFAULT 0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	IsMultiCurrency SMALLINT DEFAULT 0, -- 1=มาจากบิลที่เป็น ExchangeRate
+	FAmount 	FLOAT DEFAULT 0.0, -- ยอดเงินตามสกุลเงิน
+	ExChangeRate DECIMAL(19,10) DEFAULT 1.0, -- อัตราแลกเปลี่ยน
+	TaxGroup	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	IsCancel SMALLINT DEFAULT 0,
+	CancelOutPeriod SMALLINT DEFAULT 0, -- 1= ยกเลิกข้ามงวด
+	CancelDocNo VARCHAR(20), -- GL cancel document
+	CancelDocDate DATETIME,--GL cancel date
+	IsPos SMALLINT DEFAULT 0 -- 0=ทั่วไป 1=POS อย่าเต็ม 2=POS อย่างย่อแบบสรุป Key เอง
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_OPT_BOOK ON BCOutputTax(BookCode);
+CREATE  INDEX IDX_OPT_Source ON BCOutputTax(Source);
+CREATE  INDEX IDX_OPT_DATE ON BCOutputTax(DocDate);
+CREATE  INDEX IDX_OPT_DNO ON BCOutputTax(DocNo);
+CREATE  INDEX IDX_OPT_TDATE ON BCOutputTax(TaxDate);
+CREATE  INDEX IDX_OPT_TNO ON BCOutputTax(TaxNo);
+			
+create table BCInputTax
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	SaveFrom	SMALLINT DEFAULT 0,
+	DocNo	VARCHAR(20),
+	BookCode	VARCHAR(15),
+	Source		 SMALLINT DEFAULT 0,
+	DocDate	DATETIME,
+	TaxDate	DATETIME,
+	TaxDate2	DATETIME, -- วันที่ยื่นภาษี
+	TaxNo	VARCHAR(20),
+	ApCode	VARCHAR(20),
+	ShortTaxDesc	VARCHAR(255),
+	TaxRate	FLOAT DEFAULT 7.0,
+	Process	SMALLINT DEFAULT 0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	IsMultiCurrency SMALLINT DEFAULT 0, -- 1=มาจากบิลที่เป็น ExchangeRate
+	FAmount 	FLOAT DEFAULT 0.0, -- ยอดเงินตามสกุลเงิน
+	ExChangeRate DECIMAL(19,10) DEFAULT 1.0, -- อัตราแลกเปลี่ยน
+	ReturnTax smallint default 0, -- 0=ขอคืนได้ 1=ขอคืนไม่ได้
+	TaxGroup	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	CancelOutPeriod SMALLINT DEFAULT 0, -- 1= ยกเลิกข้ามงวด
+	CancelDocNo VARCHAR(20), -- GL cancel document
+	CancelDocDate DATETIME,--GL cancel date
+	IsCancel SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_IPT_BOOK ON BCInputTax(BookCode);
+CREATE  INDEX IDX_IPT_Source ON BCInputTax(Source);
+CREATE  INDEX IDX_IPT_DATE ON BCInputTax(DocDate);
+CREATE  INDEX IDX_IPT_DNO ON BCInputTax(DocNo);
+CREATE  INDEX IDX_IPT_TDATE ON BCInputTax(TaxDate);
+CREATE  INDEX IDX_IPT_TNO ON BCInputTax(TaxNo);
+
+create table BCARWTaxList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode VARCHAR(20),
+	BaseOfTax	FLOAT DEFAULT 0.0,
+	WTaxRate	FLOAT DEFAULT 0.0,
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	ShortDesc	VARCHAR(255),
+	TaxGroup VARCHAR(10),
+	SaveFrom SMALLINT DEFAULT 0,
+	OrderDocNo SMALLINT DEFAULT 0,
+	Paydate	DATETIME,
+	BookNo VARCHAR(30)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ARWL_DNO ON BCARWTaxList(DocNo);
+CREATE  INDEX IDX_ARWL_DATE ON BCARWTaxList(DocDate);
+CREATE  INDEX IDX_ARWL_AR ON BCARWTaxList(ArCode);
+CREATE  INDEX IDX_ARWL_SF ON BCARWTaxList(SaveFrom);
+
+create table BCARWTaxCashList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ArCode VARCHAR(20),
+	BaseOfTax	FLOAT DEFAULT 0.0,
+	WTaxRate	FLOAT DEFAULT 0.0,
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	ShortDesc	VARCHAR(255),
+	TaxGroup VARCHAR(10),
+	SaveFrom SMALLINT DEFAULT 0,
+	OrderDocNo SMALLINT DEFAULT 0,
+	PayDate	DATETIME,
+	BookNo VARCHAR(30),
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ARWC_DNO ON BCARWTaxCashList(DocNo);
+CREATE  INDEX IDX_ARWC_DATE ON BCARWTaxCashList(DocDate);
+CREATE  INDEX IDX_ARWC_AR ON BCARWTaxCashList(ArCode);
+CREATE  INDEX IDX_ARWC_SF ON BCARWTaxCashList(SaveFrom);
+
+create table BCAPWTaxList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode VARCHAR(20),
+	BaseOfTax	FLOAT DEFAULT 0.0,
+	WTaxRate	FLOAT DEFAULT 0.0,
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	ShortDesc	VARCHAR(255),
+	TaxGroup VARCHAR(10),
+	SaveFrom SMALLINT DEFAULT 0,
+	Paydate	DATETIME,
+	BookNo VARCHAR(30),
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_APWL_DNO ON BCAPWTaxList(DocNo);
+CREATE  INDEX IDX_APWL_DATE ON BCAPWTaxList(DocDate);
+CREATE  INDEX IDX_APWL_AP ON BCAPWTaxList(ApCode);
+CREATE  INDEX IDX_APWL_SF ON BCAPWTaxList(SaveFrom);
+
+create table BCAPWTaxCashList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode VARCHAR(20),
+	BaseOfTax	FLOAT DEFAULT 0.0,
+	WTaxRate	FLOAT DEFAULT 0.0,
+	WTaxAmount	FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0,
+	ShortDesc	VARCHAR(255),
+	TaxGroup VARCHAR(10),
+	SaveFrom SMALLINT DEFAULT 0,
+	OrderDocNo SMALLINT DEFAULT 0,
+	PayDate	DATETIME,
+	BookNo VARCHAR(30),
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_APWC_DNO ON BCAPWTaxCashList(DocNo);
+CREATE  INDEX IDX_APWC_DATE ON BCAPWTaxCashList(DocDate);
+CREATE  INDEX IDX_APWC_AP ON BCAPWTaxCashList(ApCode);
+CREATE  INDEX IDX_APWC_SF ON BCAPWTaxCashList(SaveFrom);
+
+create table BCGLCondition
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	FormatGroup	SMALLINT DEFAULT 0,
+	MyID	SMALLINT DEFAULT 0,
+	Name	VARCHAR(255),
+	LineNumber SMALLINT DEFAULT 0,
+	InventoryMethod SMALLINT DEFAULT -1 -- วิธีการ post บัญชีสินค้า 0=Periodic 1=Perpetual -1 ไม่สนใจ
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_GLC_G ON BCGLCondition(FormatGroup);
+CREATE  INDEX IDX_GLC_ID ON BCGLCondition(MyID);
+
+create table BCGLFormat
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(5) NOT NULL,
+	Name	VARCHAR(50),
+	FormatGroup	SMALLINT DEFAULT 0,
+	GLBookCode VARCHAR(5),
+	RecurName	VARCHAR(40),
+	GLDescription VARCHAR(1000),
+	IsDefault SMALLINT DEFAULT 0
+    PRIMARY KEY(Code)
+);
+
+create table BCGLFormatSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(5),
+	AccountCode VARCHAR(20),
+	IsDebit SMALLINT DEFAULT 0,
+	Condition SMALLINT DEFAULT 0,
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_GLCS_CD ON BCGLFormatSub(Code);
+CREATE  INDEX IDX_GLCS_LN ON BCGLFormatSub(LineNumber);
+CREATE  INDEX IDX_GLCS1 ON BCGLFormatSub(Code,LineNumber);
+
+-- ******************* GL Struct ************ ***** 
+
+CREATE TABLE BCChartOfAccount
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(20) NOT NULL,
+	Name1	 VARCHAR(70),
+	Name2	 VARCHAR(70),
+	AccountGroup	SMALLINT DEFAULT 0, -- หมวด
+	DepartSeparate	 SMALLINT DEFAULT 0,
+	ProjectSeparate	 SMALLINT DEFAULT 0,
+	AllocateSeparate 	SMALLINT DEFAULT 0,
+	JobSeparate 	SMALLINT DEFAULT 0,
+	PartSeparate 	SMALLINT DEFAULT 0,
+	SideSeparate 	SMALLINT DEFAULT 0,
+	BranchSeparate 	SMALLINT DEFAULT 0,
+	AccLevel SMALLINT DEFAULT 0,
+	IsGLAccess SMALLINT DEFAULT 0, -- ที่รายวัน GL ทำรายการได้หรือไม่ 0=ทำไม่ได้ 1=ทำได้ 
+	IsHeader	SMALLINT DEFAULT 0 -- 0=ไม่ใช้ 1=ใช่
+	PRIMARY KEY(Code)
+);
+
+CREATE  INDEX IDX_CHT_ACCN ON BCChartOfAccount(Name1);
+
+CREATE TABLE BCGLBook
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(15) NOT NULL,
+	Name 	VARCHAR(50),
+	TitleName	VARCHAR(50),
+	PrintSlip	SMALLINT, -- 0 ไม่พิมพ์ 1=พิมพ์
+	FomFileName	VARCHAR(255)
+	PRIMARY KEY(Code)
+);
+
+create table BCGLChq
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BookCode	 VARCHAR(15) NOT NULL,
+	DocDate		 DATETIME NOT NULL, 
+	DocNo		 VARCHAR(20) NOT NULL,
+	Source		 SMALLINT DEFAULT 0,
+	BankCode VARCHAR(10) NOT NULL,
+	Chqno VARCHAR(30) NOT NULL,
+	Amount FLOAT DEFAULT 0.0,
+	Duedate DATETIME NOT NULL,
+	MyDescription VARCHAR(255),
+	BookNo	VARCHAR(30),
+	ChqType	SMALLINT DEFAULT 0,
+	ExChangeRate DECIMAL(19,10) DEFAULT 1.0,
+	BranchID VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ChqNo on BCGLChq (ChqNo);
+CREATE  INDEX IDX_Duedate on BCGLChq(Duedate);
+
+CREATE TABLE BCPeriod
+(	
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	PeriodNo	 SMALLINT NOT NULL,
+	StartDate	 DATETIME NOT NULL,
+	StopDate	 DATETIME NOT NULL,
+	ItemRemain 	FLOAT DEFAULT 0.0,
+	NetProfitLoss 	FLOAT DEFAULT 0.0, -- กำไร(ขาดทุน) สุทธิ (450206)
+	SummProfitLoss 	FLOAT DEFAULT 0.0, -- กำไร(ขาดทุน) สะสม (450206)
+	Status 	SMALLINT DEFAULT 1 --0=CLOSE 1=OPEN
+	PRIMARY KEY(PeriodNo)
+);
+
+CREATE  INDEX IDX_PNO_STRD ON BCPeriod(StartDate);
+CREATE  INDEX IDX_PNO_STPD ON BCPeriod(StopDate);
+
+CREATE TABLE BCPart
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(15) NOT NULL,
+	Name	 VARCHAR(255),
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(Code)
+);
+
+CREATE TABLE BCSide
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(15) NOT NULL,
+	Name	 VARCHAR(255),
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(Code)
+);
+CREATE INDEX IDX_SIDE1 ON  BCSide(Roworder);
+
+CREATE TABLE BCJob
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(15) NOT NULL,
+	Name	 VARCHAR(255),
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(Code)
+);
+CREATE INDEX IDX_JOB1 ON  BCJob(Roworder);
+
+CREATE TABLE BCBranch
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(15) NOT NULL,
+	Name	 VARCHAR(255),
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(Code)
+);
+CREATE INDEX IDX_BRANCH1 ON  BCBranch(Roworder);
+
+CREATE TABLE BCGLBudget
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	 VARCHAR(10) NOT NULL,
+	Name	 VARCHAR(255) NOT NULL,
+	AccountCode	 VARCHAR(15) NOT NULL,
+	BranchCode	 VARCHAR(10),
+	DepartCode	 VARCHAR(10),
+	ProjectCode	 VARCHAR(10),
+	AllocateCode	 VARCHAR(10),
+	JobCode		 VARCHAR(20),
+	PartCode	VARCHAR(10),
+	SideCode	VARCHAR(10),
+	StartDate	 DATETIME,
+	StopDate	DATETIME,
+	Amount		 FLOAT	DEFAULT 0.0,
+	Remark		 VARCHAR(255),
+	Status		 SMALLINT DEFAULT 0
+	PRIMARY KEY(CODE)
+);
+
+CREATE INDEX IDX_BGG_ACCCODE ON BCGLBudget(AccountCode);
+CREATE INDEX IDX_BGG_NAME ON BCGLBudget(NAME);
+
+CREATE TABLE BCPostTrans
+(
+	BatchNo	VARCHAR(20) NOT NULL,
+	WorkStation	VARCHAR(255),
+	MyDescription	VARCHAR(255),
+	BatchDate		DATETIME NOT NULL,
+	BatchStatus	 SMALLINT NOT NULL,
+	TransCount	 SMALLINT NOT NULL,
+	TaxCount		 SMALLINT DEFAULT 0,
+	ChqCount		 SMALLINT DEFAULT 0,
+	BatchOwner	VARCHAR(50) NOT NULL,
+	BatchCheck1	 VARCHAR(50),
+	BatchCheck2	 VARCHAR(50),
+	BatchApprove	 VARCHAR(50)
+	PRIMARY KEY (BatchNo)
+);
+CREATE INDEX IDX_BCPOSTDATE ON  BCPostTrans(BatchDate);
+CREATE INDEX IDX_BCPOSTOWNER_TR  ON  BCPostTrans(BatchOwner);
+
+CREATE TABLE  BCPostHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BatchNo	VARCHAR(20) NOT NULL,
+	EventDate		 DATETIME NOT NULL,
+	EventType	 SMALLINT DEFAULT 1,-- 1=create batch , 2= Cancel batch
+	WorkStation	 VARCHAR(255)
+	PRIMARY KEY(ROWORDER)
+);
+CREATE INDEX IDX_POSTHIS1 ON  BCPostHistory(BatchNo);
+CREATE INDEX IDX_POSTHIS2 ON  BCPostHistory(EventDate);
+
+CREATE TABLE BCClosePeriod
+(
+	BatchNo	VARCHAR(20) NOT NULL,
+	WorkStation	VARCHAR(255),
+	MyDescription	VARCHAR(255),
+	BatchDate		DATETIME NOT NULL,
+	BatchStatus	 SMALLINT NOT NULL,
+	TransCount	 SMALLINT NOT NULL,
+	TaxCount		 SMALLINT DEFAULT 0,
+	ChqCount		 SMALLINT DEFAULT 0,
+	BatchOwner	VARCHAR(50) NOT NULL,
+	BatchCheck1	 VARCHAR(50),
+	BatchCheck2	 VARCHAR(50),
+	BatchApprove	 VARCHAR(50)
+	PRIMARY KEY (BatchNo)
+);
+
+CREATE INDEX IDX_BCCLOSEDATE ON  BCClosePeriod(BatchDate);
+CREATE INDEX IDX_BCCLOSEOWNER_TR  ON  BCClosePeriod(BatchOwner);
+
+CREATE TABLE  BCClsPdHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BatchNo	VARCHAR(20) NOT NULL,
+	EventDate		 DATETIME NOT NULL,
+	EventType	 SMALLINT  DEFAULT 1,-- 1=create batch , 2= Cancel batch
+	WorkStation	 VARCHAR(255)
+	PRIMARY KEY(ROWORDER)
+);
+
+CREATE TABLE BCPeriodBalance
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	PeriodNo		 SMALLINT NOT NULL,
+	BranchCode	 VARCHAR(10),
+	AccountCode   	VARCHAR(20) NOT NULL,
+	DepartCode	 VARCHAR(10),
+	ProjectCode	 VARCHAR(10),
+	AllocateCode	 VARCHAR(10),
+	PartCode	VARCHAR(10),
+	SideCode	VARCHAR(10),
+	JobCode		 VARCHAR(20),
+	StartDate	 DATETIME,
+	StopDate	DATETIME,
+	Debit 		FLOAT DEFAULT 0.0,
+	Credit		 FLOAT DEFAULT 0.0
+	PRIMARY KEY(ROWORDER)
+);
+
+CREATE INDEX IDX_PB_PNO ON BCPeriodBalance(PeriodNo);
+CREATE INDEX IDX_PB_ACC ON BCPeriodBalance(AccountCode);
+CREATE INDEX IDX_PB_BC ON BCPeriodBalance(BranchCode);
+CREATE INDEX IDX_PB_DP ON BCPeriodBalance(DepartCode);
+CREATE INDEX IDX_PB_PC ON BCPeriodBalance(ProjectCode);
+CREATE INDEX IDX_PB_AC ON BCPeriodBalance(AllocateCode);
+CREATE INDEX IDX_PB_JC ON BCPeriodBalance(JobCode);
+CREATE INDEX IDX_PB_PRC ON BCPeriodBalance(PartCode);
+CREATE INDEX IDX_PB_SC ON BCPeriodBalance(SideCode);
+
+
+CREATE TABLE BCYearPeriodBal -- ยอดสะสมประจำปี
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	YearCode	 VARCHAR(10),
+	BranchCode	 VARCHAR(10),
+	AccountCode   	VARCHAR(20) NOT NULL,
+	DepartCode	 VARCHAR(10),
+	ProjectCode	 VARCHAR(10),
+	AllocateCode	 VARCHAR(10),
+	PartCode	VARCHAR(10),
+	SideCode	VARCHAR(10),
+	JobCode		 VARCHAR(20),
+	StartDate	 DATETIME,
+	StopDate	DATETIME,
+	Debit 		FLOAT DEFAULT 0.0,
+	Credit		 FLOAT DEFAULT 0.0
+	PRIMARY KEY(ROWORDER)
+);
+
+CREATE INDEX IDX_YPB_YC ON BCYearPeriodBal(YearCode);
+CREATE INDEX IDX_YPB_ACC ON BCYearPeriodBal(AccountCode);
+CREATE INDEX IDX_YPB_BC ON BCYearPeriodBal(BranchCode);
+CREATE INDEX IDX_YPB_DP ON BCYearPeriodBal(DepartCode);
+CREATE INDEX IDX_YPB_PC ON BCYearPeriodBal(ProjectCode);
+CREATE INDEX IDX_YPB_AC ON BCYearPeriodBal(AllocateCode);
+CREATE INDEX IDX_YPB_JC ON BCYearPeriodBal(JobCode);
+CREATE INDEX IDX_YPB_PRC ON BCYearPeriodBal(PartCode);
+CREATE INDEX IDX_YPB_SC ON BCYearPeriodBal(SideCode);
+
+CREATE TABLE BCTrans
+(	
+	ROWORDER	INT NOT NULL IDENTITY(0,1),
+	BatchNo	VARCHAR(20),
+	BookCode	 VARCHAR(15) NOT NULL,
+	DocDate		 DATETIME NOT NULL, 
+	DocNo		 VARCHAR(20) NOT NULL,
+	RefDocNo	 VARCHAR(20),
+	RefDate	 	DATETIME,
+	Amount		  FLOAT DEFAULT 0.0,
+	FAmount		 FLOAT DEFAULT 0.0,
+	FCurrency		 VARCHAR(10),
+	FExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	Source		 SMALLINT DEFAULT 0 NOT NULL,
+	TransType	SMALLINT DEFAULT 0, -- 0=ด้านรับ 1=ด้านจ่าย
+	IsManualKey	SMALLINT DEFAULT 0, -- 0 = Post 1= manual key
+	MyDescription	 VARCHAR(1000),
+	RecurName	VARCHAR(40), -- รูปแบบเอกสาร
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel SMALLINT DEFAULT 0, -- ยกเลิกรายการ
+	IsPassError SMALLINT DEFAULT 0, -- ผ่านรายการแล้ว Error
+	TaxCount		 SMALLINT DEFAULT 0,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	CheqCount	 SMALLINT DEFAULT 0
+	PRIMARY KEY(DocNo,Source,BookCode)
+);
+
+CREATE INDEX IDX_BCTRANSDOCNO ON   BCTrans(DocNo);
+CREATE INDEX IDX_BCTRANSDOCDATE ON   BCTrans(DocDate);
+CREATE INDEX IDX_BCTRANSBOOK ON   BCTrans(BookCode);
+
+CREATE TABLE BCTransSub
+(	
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	BatchNo	VARCHAR(20),
+	LineNumber 	SMALLINT DEFAULT 0,
+	BookCode	VARCHAR(15) NOT NULL,
+	DocDate	 	DATETIME NOT NULL,
+	DocNo 		VARCHAR(20) NOT NULL,
+	AccountCode 	VARCHAR(20) NOT NULL,
+	ExtDescription 	VARCHAR(1000),
+	DepartCode		VARCHAR(10),
+	ProjectCode 	VARCHAR(10),
+	AllocateCode 	VARCHAR(10),
+	PartCode	VARCHAR(10),
+	SideCode	VARCHAR(10),
+	JobCode 		VARCHAR(20),
+	BranchCode 	VARCHAR(15),
+	Debit 		FLOAT DEFAULT 0.0,
+	Credit 		FLOAT DEFAULT 0.0,
+	FDebit 		FLOAT  DEFAULT 0.0,
+	FCredit 		FLOAT  DEFAULT 0.0,
+	Source		 SMALLINT DEFAULT 0,
+	IsManualKey	SMALLINT DEFAULT 0, -- 0 = Post 1= manual key
+	IsCancel SMALLINT DEFAULT 0,
+	IsConfirm	SMALLINT DEFAULT 0
+	PRIMARY KEY (ROWORDER)
+);
+ --- ตัว Link ระหว่าง Head และ Detail คือ DocNo,BookCode,Source เด้อ
+CREATE INDEX IDX_GTS_ACC ON  BCTransSub(AccountCode);
+CREATE INDEX IDX_GTS_SOU ON  BCTransSub(Source);
+CREATE INDEX IDX_GTS_DOC ON  BCTransSub(DocNo);
+CREATE INDEX IDX_GTS_BOO ON  BCTransSub(BookCode);
+CREATE INDEX IDX_GTS_BC ON BCTransSub(BranchCode);
+CREATE INDEX IDX_GTS_DP ON BCTransSub(DepartCode);
+CREATE INDEX IDX_GTS_PC ON BCTransSub(ProjectCode);
+CREATE INDEX IDX_GTS_AC ON BCTransSub(AllocateCode);
+CREATE INDEX IDX_GTS_JC ON BCTransSub(JobCode);
+CREATE INDEX IDX_GTS_PRC ON BCTransSub(PartCode);
+CREATE INDEX IDX_GTS_SC ON BCTransSub(SideCode);
+
+CREATE TABLE BCAccSeparate
+(	
+	ROWORDER	INT NOT NULL IDENTITY(0,1),
+	SeparateType		 SMALLINT DEFAULT 0, -- 0=dep 1= project 2=allocate 3=site 4-part 5 =branch 6=job
+	AccountCode 	VARCHAR(20) NOT NULL,
+	SeparateCode VARCHAR(1000) NOT NULL 
+	PRIMARY KEY (ROWORDER)
+);
+create index IDX_AccSeparate1  ON BCAccSeparate(AccountCode);
+-- ******************* Fixed Assets ********************************
+create table BCAssetsMaster -- ทะเบียนทรัพย์สิน
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	Code			VARCHAR(25) NOT NULL,
+	Name			VARCHAR(255),
+	UnitCode	VARCHAR(10),
+	AssetsType	VARCHAR(10),
+	DepartCode		VARCHAR(10),
+	LocateCode		VARCHAR(10),
+	PictureFileName			VARCHAR(255),
+	BuyDate			DATETIME,
+	BuyPrice		FLOAT	DEFAULT 0.0,
+	BuyDocNo		VARCHAR(20),
+	BuyDocDate	DATETIME,
+	BuyForm			VARCHAR(255),
+	StartCalcDate DATETIME,
+	AmountCalc		FLOAT DEFAULT 0.0,
+	CalcType		SMALLINT DEFAULT 0,
+	AssetsRate			FLOAT DEFAULT 0.0,
+	AssetsAge				SMALLINT DEFAULT 0,
+	StopCalcDate	DATETIME,
+	AssetsBalance		FLOAT DEFAULT 0.0, -- มูลค่าคงเหลือยกมา
+	SumOfAssetsBal	FLOAT DEFAULT 0.0, -- ค่าเสื่อมสะสมยกมา
+	SaleDate		DATETIME,
+	SalePrice		FLOAT DEFAULT 0.0,
+	SaleAssetsBal	FLOAT DEFAULT 0.0,
+	SaleDocNo		VARCHAR(20),
+	SaleDocDate			DATETIME,
+	CustName		VARCHAR(255),
+	InsuranceNo			VARCHAR(20),
+	SaftyNo			VARCHAR(20),
+	SaftyName		VARCHAR(255),
+	InsurePremium		FLOAT DEFAULT 0.0,
+	InsureAge			SMALLINT DEFAULT 0,
+	InsureStartDate			DATETIME,
+	InsureStopDate		DATETIME,
+	MyDescription			VARCHAR(1000),
+	Remain		FLOAT DEFAULT 0.0,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	FirstYearRate  FLOAT DEFAULT 0.0,
+	IsFirstScrap  SMALLINT DEFAULT 1
+	PRIMARY KEY (Code)
+);
+
+create table BCAssetsLocate -- ที่ตั้งค่าเสื่อม
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY (Code)
+);
+
+create table BCAssetsType -- ประเภทสินทรัพย์
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	DrAccountCode VARCHAR(20),
+	CrAccountCode VARCHAR(20)
+	PRIMARY KEY (Code)
+);
+
+create table BCAssetsOfYear	-- ค่าเสื่อมประจำปี
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AssetsCode	VARCHAR(25) ,	-- รหัสสินทรัพย์
+	StartCalcDate	DATETIME, -- วันที่เริ่มคำนวณจริง
+	StopCalcDate	DATETIME,	-- วันที่สิ้นสุดการคำนวณ
+	DepartCode		VARCHAR(10),	--แผนกของสินทรัพย์
+	AssetsType	VARCHAR(10),	-- ประเภทของสินทรัพย์
+	LocateCode	VARCHAR(10),	-- ที่ตั้งของสินทรัพย์
+	DayCalc			SMALLINT DEFAULT 0,	-- จำนวนวันที่คำนวณจริง
+	BeginBalance FLOAT DEFAULT 0.0,		-- ยอดยกมาของต้นงวด
+	AssetsAmount		FLOAT DEFAULT 0.0,	-- ค่าเสื่อมรวมของงวดนี้
+	AssetsAmass		FLOAT DEFAULT 0.0,	-- ยอดค่าเสื่อมสำสมประจำงวดนี้
+	EndBalance		FLOAT DEFAULT 0.0	-- ยอดยกไป
+	PRIMARY KEY (ROWORDER)
+);
+
+CREATE INDEX IDX_ASY_ASC ON BCAssetsOfYear(AssetsCode);
+CREATE INDEX IDX_ASY_STRD ON BCAssetsOfYear(StartCalcDate);
+CREATE INDEX IDX_ASY_STPD ON BCAssetsOfYear(StopCalcDate);
+CREATE INDEX IDX_ASY_DEP ON BCAssetsOfYear(DepartCode);
+CREATE INDEX IDX_ASY_TYP ON BCAssetsOfYear(AssetsType);
+CREATE INDEX IDX_ASY_LOC ON BCAssetsOfYear(LocateCode);
+
+create table BCAssetsOfPeriod	-- ค่าเสื่อมประจำงวดบัญชี
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AssetsCode	VARCHAR(25) ,	-- รหัสสินทรัพย์
+	StartCalcDate	DATETIME, -- วันที่เริ่มคำนวณจริง
+	StopCalcDate	DATETIME,	-- วันที่สิ้นสุดการคำนวณ
+	DepartCode		VARCHAR(10),	--แผนกของสินทรัพย์
+	AssetsType	VARCHAR(10),	-- ประเภทของสินทรัพย์
+	LocateCode	VARCHAR(10),	-- ที่ตั้งของสินทรัพย์
+	BeginBalance FLOAT DEFAULT 0.0,		-- ยอดยกมาของต้นงวด
+	AssetsAmount FLOAT DEFAULT 0.0,	-- ค่าเสื่อมรวมของงวดนี้
+	AssetsPeriod1 FLOAT DEFAULT 0.0,
+	AssetsPeriod2 FLOAT DEFAULT 0.0,
+	AssetsPeriod3 FLOAT DEFAULT 0.0,
+	AssetsPeriod4 FLOAT DEFAULT 0.0,
+	AssetsPeriod5 FLOAT DEFAULT 0.0,
+	AssetsPeriod6 FLOAT DEFAULT 0.0,
+	AssetsPeriod7 FLOAT DEFAULT 0.0,
+	AssetsPeriod8 FLOAT DEFAULT 0.0,
+	AssetsPeriod9 FLOAT DEFAULT 0.0,
+	AssetsPeriod10 FLOAT DEFAULT 0.0,
+	AssetsPeriod11 FLOAT DEFAULT 0.0,
+	AssetsPeriod12 FLOAT DEFAULT 0.0,
+	AssetsPeriod13 FLOAT DEFAULT 0.0, -- เผื่อไว้
+	EndBalance		FLOAT DEFAULT 0.0	-- ยอดยกไป
+	PRIMARY KEY (ROWORDER)
+);
+
+CREATE INDEX IDX_ASP_ASC ON BCAssetsOfPeriod(AssetsCode);
+CREATE INDEX IDX_ASP_STRD ON BCAssetsOfPeriod(StartCalcDate);
+CREATE INDEX IDX_ASP_STPD ON BCAssetsOfPeriod(StopCalcDate);
+CREATE INDEX IDX_ASP_DEP ON BCAssetsOfPeriod(DepartCode);
+CREATE INDEX IDX_ASP_TYP ON BCAssetsOfPeriod(AssetsType);
+CREATE INDEX IDX_ASP_LOC ON BCAssetsOfPeriod(LocateCode);
+
+create table BCAssetsOfBuild
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AssetsCode	VARCHAR(25) NOT NULL,	-- รหัสสินทรัพย์
+	MyDescription		VARCHAR(255),
+	Amount		FLOAT DEFAULT 0.0,
+	PrintCount SMALLINT DEFAULT 0 -- Count Print form -- A-20030923
+	PRIMARY KEY (AssetsCode)
+);
+create index IDX_ASBLDDES ON BCAssetsOfBuild ( MyDescription );
+
+create table BCAssetsOfBldSub
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	LineNumber	SMALLINT DEFAULT 0,
+	AssetsCode	VARCHAR(25) ,	-- รหัสสินทรัพย์
+	DocDate		DATETIME,
+	DocNo	VARCHAR(20),
+	Desc1	 VARCHAR(255),
+	Desc2		VARCHAR(255),
+	Amount		FLOAT DEFAULT 0.0
+	PRIMARY KEY (ROWORDER)
+);
+
+create index IDX_ASBLDS_AS ON BCAssetsOfBldSub(AssetsCode);
+create index IDX_ASBLDS_LI ON BCAssetsOfBldSub(LineNumber);
+--create index IDX_ASBLDSS1  ON BCAssetsOfBldSub(roworder);
+create index IDX_ASBLDSS2  ON BCAssetsOfBldSub(Docdate);
+create index IDX_ASBLDSS3  ON BCAssetsOfBldSub(Docno,linenumber);
+
+create table BCRenovate
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AssetsCode	VARCHAR(25) NOT NULL,	-- รหัสสินทรัพย์
+	Amount		FLOAT DEFAULT 0.0,
+	PrintCount SMALLINT DEFAULT 0 -- Count Print form -- A-20030923
+	PRIMARY KEY (AssetsCode)
+);
+create index IDX_Renovate1 on BCRenovate(roworder);
+
+create table BCRenovateSub
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	LineNumber	SMALLINT DEFAULT 0,
+	AssetsCode	VARCHAR(25) ,	-- รหัสสินทรัพย์
+	DocDate		DATETIME,
+	DocNo	VARCHAR(20),
+	Desc1	 VARCHAR(255),
+	Desc2		VARCHAR(255),
+	Amount		FLOAT DEFAULT 0.0
+	PRIMARY KEY (ROWORDER)
+);
+
+create index IDX_ASREVS_AS on BCRenovateSub(AssetsCode);
+create index IDX_ASREVS_LI on BCRenovateSub(LineNumber);
+create index IDX_ASREVS1 on BCRenovateSub(docno);
+create index IDX_ASREVS2 on BCRenovateSub(docdate);
+
+create table BCAccGroup 
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	AccGroup	VARCHAR(1000) -- 1:2,4,5,
+	PRIMARY KEY (Code)
+);
+create index idx_accgrp1 on BCAccGroup(ROWORDER);
+create index idx_accgrp2 on BCAccGroup(AccGroup);
+-- *************** BC Point Of Sale 
+
+create table BPsConfig -- Pos Config
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	PrintSlipMode SMALLINT	DEFAULT 0, -- 0=พิมพ์ทีหลัง 1=พิมพ์เลย
+	CashierMode SMALLINT	DEFAULT 0, -- 0=Cashier กับ Sale คนเดียวกัน 1=คนละคน
+	AfterDecimalMode SMALLINT	DEFAULT 0, -- 0=ปัดขึ้นหมด 1=ปัดลงหมด 2=ไม่ปัด 3=ปัดเศษสตางค์
+	GroupItemStatus SMALLINT	DEFAULT 0, -- 0=สินค้าตัวเดียวกันให้รวมรายการ 1=ไม่ต้องรวม
+	StockProcess SMALLINT	DEFAULT 0, -- 0=สิ้นวัน 1=ทันที
+	SoundFolder VARCHAR(255),
+	SlipType SMALLINT	DEFAULT 0, -- 0=ไม่พิมพ์ 1=Slip เป็นม้วน 2=Slip ที่มีรูปแบบแน่นอน
+	PrinterPort VARCHAR(50), --
+	PrinterType	SMALLINT	DEFAULT 0, 
+	CashDrawer SMALLINT	DEFAULT 0, -- 0=ไม่ใช้ 1=ใช้
+	CashDrawerPort VARCHAR(50), -- เครื่องเก็บเงิน
+	PrinterPortRate SMALLINT DEFAULT 9600, -- Rate ของเครื่อง Printer
+	CashDrawerPortRate SMALLINT DEFAULT 9600, -- Rate ของเครื่อง Printer
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	BillGroup	VARCHAR(4),	-- กลุ่มเอกสาร
+	DefaultCustCode VARCHAR(15),	-- รหัสลูกค้า
+	DefaultDepart VARCHAR(10), -- รหัสแผนก
+	MemberMode SMALLINT DEFAULT 0, -- 0=ไม่มีระบบสามาชิก 1=มีระบบสมาชิกสะสมแต้ม
+	SaleBarterPoint SMALLINT DEFAULT 0, -- 0=มีจุดแลกซื้อต่างหาก 1=ยิงให้ในบิลขายเลย
+	PromotionType	SMALLINT DEFAULT 0, -- 0=ไม่ใช้ 1=แบบที่ 1 2=แบบที่ 2 
+	MarkType SMALLINT DEFAULT 0, -- 0=สะสมแบบเป็นแต้ม 1=แบบเป็นมูลค่า
+	MarkMode SMALLINT DEFAULT 0, -- 0=มีแบบเดียว 1= แยกเป็น 2 แบบ
+	ValuePerMark1 FLOAT DEFAULT 0.0, -- มูลค่าต่อแต้มแบที่ 1 (ราคาปกติ)
+	ValuePerMark2 FLOAT DEFAULT 0.0 -- มูลค่าต่อแต้มแบที่ 2 (ราคาโปรโมชั่น)
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BPSCreditType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50), 
+	ChargeWord VARCHAR(30),
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(Code)
+);
+create index IDX_CREDITTYPEROW ON BPSCreditType(roworder);
+
+create table BPSItemPromotion
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	GroupCode	VARCHAR(10) NOT NULL,
+	StartDate	DATETIME,
+	StopDate	DATETIME,
+	PromotionPrice	FLOAT DEFAULT 0.0,
+	PromotionItem	VARCHAR(20),
+	PromotionQty	FLOAT DEFAULT 0.0,
+	PromotionDiscount	VARCHAR(25),
+	QtyChk	FLOAT DEFAULT 0.0,
+	AmountChk	FLOAT DEFAULT 0.0,
+	GroupName	VARCHAR(50),
+	PromotionFor	SMALLINT, 
+	PromotionType	SMALLINT,
+	ExchangeItem	VARCHAR(20),
+	ExchangeDiscount	VARCHAR(25),
+	PromotionItem2	VARCHAR(25),
+	ExchangeItem2	VARCHAR(25),
+	StartItemGroup VARCHAR(10),
+	StopItemGroup VARCHAR(10)
+    PRIMARY KEY(GroupCode)
+);
+create index IDX_ItemPromo1 ON BPSItemPromotion(startdate,stopdate);
+create index IDX_ItemPromo2 ON BPSItemPromotion(roworder);
+
+create table BPSCashierShift -- บันทึกเปิดปิดกะ
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	ShiftNo	SMALLINT,
+	CashierCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	ShiftStatus	SMALLINT, -- 0=เปิด 1=ปิด
+	BeginAmount FLOAT DEFAULT 0.0, -- ยอดเงินยกมา
+	CashAmount	FLOAT DEFAULT 0.0, -- ยอดเงินสดรับ
+	CreditAmount	FLOAT DEFAULT 0.0, -- ยอดบัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน
+	CashInCase FLOAT DEFAULT 0.0, -- ยอดเงินสดในเกะ BeginAmount+CashAmount-ChangeAmount
+	ChqAmount FLOAT DEFAULT 0.0,
+	DraftAmount FLOAT DEFAULT 0.0,
+	SumOfQty FLOAT DEFAULT 0.0, -- รวมปรมาณที่ขาย
+	SaleCount SMALLINT DEFAULT 0, -- จำนวนการขาย
+	DisCount SMALLINT DEFAULT 0, --จำนวนการลด
+	CashPayCount SMALLINT DEFAULT 0, -- การรับเงินสด
+	OtherPayCount SMALLINT DEFAULT 0, -- การรับอื่นๆ
+	TaxInvStart	VARCHAR(20), -- ใบกำกับอย่างย่อเริ่ม
+	TaxInvStop	VARCHAR(20),
+	SumOfItemAmount FLOAT DEFAULT 0.0, -- ยอดขายสินค้าคิดภาษี
+	SumOfTaxAmount FLOAT DEFAULT 0.0, -- ยอดภาษี
+	ZeroTaxAmount	FLOAT DEFAULT 0.0, -- ยอดภาษี 0
+	ExceptTaxAmount	FLOAT DEFAULT 0.0, -- ยอดยกเว้นภาษี
+	NetAmount	FLOAT DEFAULT 0.0, -- รวมทั้งสิ้น SumOfItemAmount+ZeroTaxAmount+ExceptTaxAmount
+	DisAmount FLOAT DEFAULT 0.0 -- สรุปส่วนลด
+    PRIMARY KEY(DocNo)
+);
+create index IDX_BPSCashierS1 ON BPSCashierShift(docdate);
+create index IDX_BPSCashierS2 ON BPSCashierShift(docno,docdate);
+create index IDX_BPSCashierS3 ON BPSCashierShift(MachineNo);
+--create index IDX_BPSCashierS4 ON BPSCashierShift(docno,docdate);
+
+create table BPSReturnDesc -- หมายเหตุการคืนสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50)
+    PRIMARY KEY(Code)
+);
+create index IDX_BPSReturnDesc1 ON BPSReturnDesc(roworder);
+
+
+create table BPSHoldingBill
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ExpireCredit SMALLINT DEFAULT 0,
+	ExpireDate DATETIME ,
+	ArCode	VARCHAR(20) NOT NULL,
+	CashierCode	VARCHAR(10),
+	ShiftNo	SMALLINT DEFAULT 0, -- กะที่
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	BillTime	VARCHAR(15), -- เวลาของ POS
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	MyDescription	VARCHAR(1000),
+	BillGroup	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME
+    PRIMARY KEY(DOCNO)
+);
+create index IDX_BPSHoldingB1 ON BPSHoldingBill(docdate);
+create index IDX_BPSHoldingB2 ON BPSHoldingBill(MachineNo);
+create index IDX_BPSHoldingB3 ON BPSHoldingBill(arcode,docno);
+create index IDX_BPSHoldingB4 ON BPSHoldingBill(docno,docdate);
+
+create table BPSHoldingBillSUB
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	SORefNo	VARCHAR(20),
+	StockType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	LineNumber	SMALLINT DEFAULT 0,
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	BarCode	VARCHAR(20),
+	CustTypeCode	VARCHAR(10),
+	CustGroupCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+-- ************* POS ------------
+	MachineNo	VARCHAR(10), -- เลขที่เครื่อง
+	MachineCode	VARCHAR(30), -- เลขประจำเครื่อง
+	BillTime	VARCHAR(15),
+	CashierCode	VARCHAR(10),
+	PosStatus SMALLINT DEFAULT 0, -- 0=ไม่ใช่ 1=ใบกำกับอย่างย่อ 2=ใบกำกับอย่างเต็ม
+	PriceStatus SMALLINT DEFAULT 0 -- 0=ราคาปกติ 1=ราคาโปรโมชั่น
+-- ************* POS ------------
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_BPSHoldingBillS1 ON BPSHoldingBillSUB(Linenumber);
+create index IDX_BPSHoldingBillS2 ON BPSHoldingBillSUB(Itemcode);
+create index IDX_BPSHoldingBillS3 ON BPSHoldingBillSUB(Itemcode,whcode,shelfcode,linenumber);
+create index IDX_BPSHoldingBillS4 ON BPSHoldingBillSUB(docno,linenumber);
+create index IDX_BPSHoldingBillS5 ON BPSHoldingBillSUB(docno,itemcode);
+
+create table BCMemberReward
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(25) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ArCode	VARCHAR(20),
+	Description	VARCHAR(255)
+    PRIMARY KEY(DocNo)
+);
+create index IDX_MemberReward1 ON BCMemberReward(Roworder);
+create index IDX_MemberReward2 ON BCMemberReward(Docdate);
+create index IDX_MemberReward3 ON BCMemberReward(Arcode,DocNo);
+create index IDX_MemberReward4 ON BCMemberReward(Arcode);
+
+create table BCMmbRewardSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(25) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	ArCode	VARCHAR(20),
+	Description	VARCHAR(1000), -- ให้เป็นอะไร/หมายเหตุ
+	LineNumber	SMALLINT DEFAULT 0,
+	RewardType SMALLINT DEFAULT 0, -- 0=ตัดยอดมูลค่า 1=ตัดแต้ม
+	MarkUse	FLOAT DEFAULT 0.0 -- ยอดตัด
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_MMBRS1 ON BCMmbRewardSub(Docno);
+create index IDX_MMBRS2 ON BCMmbRewardSub(Docdate);
+create index IDX_MMBRS3 ON BCMmbRewardSub(DocNo,Docdate);
+create index IDX_MMBRS4 ON BCMmbRewardSub(Docno,linenumber);
+
+create table BCCatchProccess
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME NOT NULL,
+	CurDateTime	DATETIME NOT NULL,
+	ItemCode	VARCHAR(25),
+	TransType	SMALLINT DEFAULT 0,
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	UnitCode	VARCHAR(10),
+	TransQty	FLOAT DEFAULT 0.0 ,
+	ProcQty 	FLOAT DEFAULT 0.0 ,
+	StockQty FLOAT DEFAULT 0.0 ,
+	ProcResult	SMALLINT DEFAULT 0,
+	DeleteMode SMALLINT DEFAULT 0,
+	PeriodNo SMALLINT DEFAULT 0,
+	ComputerName VARCHAR(255),
+	QueryUpdate	VARCHAR(1000)
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCItemStandardCost
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25) NOT NULL,
+	UnitCode	VARCHAR(10),
+	StartDate	DATETIME ,
+	StopDate	DATETIME ,
+	StandardCost	FLOAT DEFAULT 0.0,
+	IsRevalue SMALLINT DEFAULT 0, --0 open ,1=close this standard cost
+	RevalueDate DATETIME,
+	TransState	SMALLINT DEFAULT 0 
+    PRIMARY KEY(ROWORDER)
+);
+
+create index IDX_STDC1 ON BCItemStandardCost(itemcode);
+create index IDX_STDC2 ON BCItemStandardCost(startdate,stopdate);
+
+
+create table BCRecurTemp
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME ,
+	MyType	SMALLINT DEFAULT 0, -- 0 = ยังไม่เอาไปทำ Sale Order, 1 = ทำ Sale Order แล้ว
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ArCode	VARCHAR(20) NOT NULL,
+	PassBillTo VARCHAR(20) ,
+	DepartCode	VARCHAR(10),
+	CreditDay	SMALLINT DEFAULT 0,
+	DeliveryDay	SMALLINT DEFAULT 0, --
+	DeliveryDate	DATETIME, --
+	DueDate	DATETIME,
+	PayBillDate	DATETIME,
+	SaleCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	TaxRate	FLOAT DEFAULT 7.0,
+	IsConfirm	SMALLINT DEFAULT 0,
+	MyDescription	VARCHAR(1000),
+	BillType	SMALLINT DEFAULT 0,
+	BillGroup	VARCHAR(10),
+	RefDocNo	VARCHAR(20), -- 
+	CrAuthorizeMan VARCHAR(20),
+	DeliveryAddr VARCHAR(10),
+	ContactCode	VARCHAR(10),
+	TransportCode	VARCHAR(10),
+	SumOfItemAmount	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	AfterDiscount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountCase	SMALLINT DEFAULT 0,
+	ZeroTaxAmount	FLOAT DEFAULT 0.0,
+	ExceptTaxAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	DepositIncTax SMALLINT DEFAULT 1, -- ?.??????? 1 = ?????? 0= ????? Tax
+	SumOfDeposit1	FLOAT DEFAULT 0.0, -- ??????????????.???
+	SumOfDeposit2	FLOAT DEFAULT 0.0, -- ?????? post GL ??????..?? Vat .???????????
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	NetDebtAmount	FLOAT DEFAULT 0.0,
+	OtherIncome	FLOAT DEFAULT 0.0, -- ??????????? ?????????.????????
+	OtherExpense	FLOAT DEFAULT 0.0, --???????????????
+	ExcessAmount1	FLOAT DEFAULT 0.0, --?.????????????????
+	ExcessAmount2	FLOAT DEFAULT 0.0, --????.???????????????????????????????
+	BillBalance	FLOAT DEFAULT 0.0,
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other		
+	IsCancel	SMALLINT DEFAULT 0, -- 0=??.???Cancel 1=Cancel
+	IsCreditNote	SMALLINT DEFAULT 0, -- 0=??.????????? 1=??????????
+	IsDebitNote	SMALLINT DEFAULT 0, -- 0=??.???????????? 1=?????????????
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=????????? 1=??????
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=?????????? 1=???????
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=??.????????????? 1=??????????????
+	GLTransData	SMALLINT DEFAULT 0, -- 0=auto 1=manual
+	PayBillStatus	SMALLINT DEFAULT 0, -- 1 ??.???????
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RecurName	VARCHAR(40),
+	ExchangeProfit	FLOAT DEFAULT 0.0,
+	CustTypeCode	VARCHAR(10),
+	CustGroupCode	VARCHAR(10),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	IsConditionSend SMALLINT DEFAULT 0,
+	OwnReceive VARCHAR(255),
+	CarLicense VARCHAR(30),
+	SOStatus	SMALLINT DEFAULT 0, -- 0=สั่งขาย 1=สั่งจอง
+	HoldingStatus SMALLINT DEFAULT 0, -- 0=ไม่ Holding 1= Holding
+	TotalTransport	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	SumOtherValue	FLOAT DEFAULT 0.0, -- รวมค่าอื่น
+	TimeTransport		VARCHAR(10),	-- เวลาข่นส่ง
+	CarType		VARCHAR(10), -- ประเภทรถ
+	CondPayCode	VARCHAR(10)  --เงื่อนไขการชำระเงิน
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_RECT1 ON BCRecurTemp(docno);
+create index IDX_RECT2 ON BCRecurTemp(docdate);
+create index IDX_RECT3 ON BCRecurTemp(arcode);
+create index IDX_RECT4 ON BCRecurTemp(arcode,docno);
+create index IDX_RECT5 ON BCRecurTemp(arcode,docdate);
+
+
+create table BCRecurTempSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BehindIndex	SMALLINT DEFAULT 1, -- 1=???? ???????? Sort ?????.?? Stock Card ??? DocDate,BehindIndex,MyType
+	MyType	SMALLINT DEFAULT 0, -- 0 = ยังไม่เอาไปทำ Sale Order, 1 = ทำ Sale Order แล้ว
+	DocNo	VARCHAR(20),
+	RecurName	VARCHAR(40),
+	TaxNo	VARCHAR(20),
+	TaxType	SMALLINT DEFAULT 0,
+	ItemCode	VARCHAR(25),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(1000),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือหลังตัด
+	CNQty	FLOAT DEFAULT 0.0,
+	Qty	FLOAT DEFAULT 0.0,
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(35),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	SumOfCost	FLOAT DEFAULT 0.0, -- ????????????.???? ???????????????????????
+	BalanceAmount	FLOAT DEFAULT 0.0,
+	UnitCode	VARCHAR(10),
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	OppositePrice2	FLOAT DEFAULT 0.0, -- ??????????????? 2 (????)
+	SORefNo	VARCHAR(20),
+	StockType	SMALLINT DEFAULT 0,
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=??????? 1=?????????? 2=??????????????
+	LineNumber	SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ??.????????????.??.???????????????
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=??.???Cancel 1=Cancel
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	SOStatus	SMALLINT DEFAULT 0, -- 0=สั่งขาย 1=สั่งจอง
+	HoldingStatus SMALLINT DEFAULT 0, -- 0=ไม่ Holding 1= Holding
+	BarCode	VARCHAR(20),
+	CustTypeCode	VARCHAR(10),
+	CustGroupCode	VARCHAR(10),
+	SaleAreaCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),	
+	GroupCode	VARCHAR(10),	
+	BrandCode	VARCHAR(10), 
+	TypeCode	VARCHAR(10),	
+	FormatCode	VARCHAR(10),	
+	PosStatus SMALLINT DEFAULT 0, 
+	IsPromotion SMALLINT DEFAULT 0, 
+	PremiumStatus SMALLINT DEFAULT 0,
+	--Auto Packing Section by ??
+	FixUnitCost	FLOAT DEFAULT 0.0,
+	FixUnitQty		FLOAT DEFAULT 0.0,
+--support color,size,style
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	IsConditionSend SMALLINT DEFAULT 0,
+	TransportAmount	FLOAT DEFAULT 0.0,
+	OtherValue	FLOAT DEFAULT 0.0,
+	REMAINPAYQTY	FLOAT DEFAULT 0.0,
+	ISPAYMENT SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_RECS1 ON BCRecurTempSub(docno);
+create index IDX_RECS2 ON BCRecurTempSub(docdate);
+create index IDX_RECS3 ON BCRecurTempSub(arcode);
+create index IDX_RECS4 ON BCRecurTempSub(arcode,docno);
+create index IDX_RECS5 ON BCRecurTempSub(arcode,docdate);
+create index IDX_RECS6 ON BCRecurTempSub(barcode);
+create index IDX_RECS7 ON BCRecurTempSub(docno,linenumber);
+create index IDX_RECS8 ON BCRecurTempSub(linenumber);
+create index IDX_RECS9 ON BCRecurTempSub(itemcode,unitcode,whcode,shelfcode);
+create index IDX_RECS10 ON BCRecurTempSub(itemcode);
+create index IDX_RECS11 ON BCRecurTempSub(BehindIndex);
+
+create table BCQuotationStatus -- สถานะการเสนอราคา
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index IDX_QAS1 ON BCQuotationStatus(roworder);
+
+create table BCContactList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50)	NOT NULL,
+	Address	VARCHAR(1000),
+	Telephone	VARCHAR(30),
+	ParentCode	VARCHAR(20) NOT NULL,
+	MyType	SMALLINT	DEFAULT 0 NOT NULL,
+	PictureFileName	VARCHAR(255),
+	CardPicFileName	VARCHAR(255),
+	PersonPosition	VARCHAR(50),
+	DefaultStatus	SMALLINT,
+	MyJob VARCHAR(50),
+--for address by aom
+	companyname VARCHAR(255),
+	isdefault SMALLINT DEFAULT 0,
+	restype VARCHAR(255),
+	contactno varchar(10),
+	moo varchar(10),
+	village VARCHAR(255),
+	building VARCHAR(255),
+	floor varchar(10),
+	room varchar(10),
+	soi VARCHAR(255),
+	road VARCHAR(255),
+	subdist VARCHAR(255),
+	district VARCHAR(255),
+	province VARCHAR(255),
+	country VARCHAR(255),
+	zipcode varchar(10)
+    PRIMARY KEY(Code,ParentCode,MyType)
+);
+
+CREATE  INDEX IDX_CCLNAME ON BCContactList(NAME);
+CREATE  INDEX IDX_CCLPCODE ON BCContactList(ParentCode);
+CREATE  INDEX IDX_CCLTYPE	ON BCContactList(MyType);
+
+-- เก็บรหัสธนาคาร
+create table BCBank
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index IDX_BANK_ROWORDER ON BCBank(roworder);
+
+-- เก็บรหัสสาขาธนาคาร
+create table BCBankBranch
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index IDX_BANKBranchROW ON BCBankBranch(roworder);
+
+-- เก็บรหัสสมุดเงินฝากธนาคาร
+create table BCBankBook
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BookNo	VARCHAR(30) NOT NULL, -- เลขที่บัญชี
+	Name	VARCHAR(50), -- ชื่อบัญชี
+	AccountType	VARCHAR(10) , -- รหัสประเภทบัญชีธนาคาร	
+	BankCode	VARCHAR(50), -- รหัสธนาคาร
+	BranchCode	VARCHAR(10),-- รหัสสาขาธนาคาร
+	AccountCode	VARCHAR(20),-- รหัสบัญชี GL	
+	Balance	FLOAT	DEFAULT 0.0-- ยอดคงเหลือ
+    PRIMARY KEY(BookNo)
+);
+create index IDX_BANKBOOKNO ON BCBankBook(BankCode,BookNo);
+create index IDX_BANKBOOKACC ON BCBankBook(Accountcode);
+create index IDX_BANKBOOKCODE ON BCBankBook(BankCode);
+
+-- เก็บรหัสผู้ติดต่อธนาคาร
+create table BCBankConHD
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(50), -- รหัสธนาคาร
+	BranchCode	VARCHAR(10)-- รหัสสาขาธนาคาร
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_BANKHD_BANKCODE ON BCBankConHD(BankCode);
+create index IDX_BANKHD_BRANCHCODE ON BCBankConHD(BranchCode);
+
+-- เก็บรหัสผู้ติดต่อธนาคาร
+create table BCBankContact
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(50), -- รหัสธนาคาร
+	BranchCode	VARCHAR(10),-- รหัสสาขาธนาคาร	
+	BookNo	VARCHAR(30) NOT NULL, -- เลขที่บัญชีธนาคาร
+	Code	VARCHAR(10) NOT NULL, -- รหัสผู้ติดต่อ
+	Name	VARCHAR(50)	NOT NULL, -- ชื่อผู้ติดต่อ
+	Address	VARCHAR(1000), -- ที่อยู่
+	Telephone	VARCHAR(30), -- เบอร์โทร
+	PictureFileName	VARCHAR(255),
+	CardPicFileName	VARCHAR(255),
+	PersonPosition	VARCHAR(50),
+	DefaultStatus	SMALLINT DEFAULT 1 	-- 1=ติดต่อ   0=ไม่ติดต่อ
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_BANKCT_BANKCODE ON BCBankContact(BankCode);
+create index IDX_BANKCT_CODE ON BCBankContact(Code);
+create index IDX_BANKCT_BRANCHCODE ON BCBankContact(BranchCode);
+create index IDX_BANKCT_CBCODE ON BCBankContact(Code,BankCode);
+-- Currency 
+-- jum 2-9-2004
+create table BCCurrency
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,-- currency code
+	Name	VARCHAR(50) NOT NULL,
+	DispWording VARCHAR(20),-- Currency name example Dollar
+	DispWording2 VARCHAR(20),-- After decimal currency sub word example cent
+	Fullstopword VARCHAR(50),-- Currency full stop word example only
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	ExchangeDate	DATETIME,
+	Symbol	VARCHAR(2)	DEFAULT 'B'
+    PRIMARY KEY(CODE)
+);
+--	Currency exchange rate
+-- jum 2-9-2004
+create table bccurexchangerate
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,-- currency code
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, --exchange rate
+	ExchangeDate	DATETIME,
+	PRIMARY KEY(CODE,ExchangeDate)
+);	
+CREATE INDEX IDX_CUR2_1 ON bccurexchangerate(CODE);
+CREATE INDEX IDX_CUR2_2 ON bccurexchangerate(ExchangeDate);
+
+
+-- เก็บรหัสประเภทบัญชีธนาคาร
+create table BCBankAccount
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+ -- เก็บอัตราดอกเบี้ยของธนาคาร
+create table BCBankInterests
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10) NOT NULL, -- รหัสธนาคาร
+	AccountType	VARCHAR(10) NOT NULL, -- รหัสประเภทบัญชีธนาคาร
+	Interests		DECIMAL(19,10) DEFAULT 0.0, -- อัตราดอกเบี้ย
+	CreateDateTime	DATETIME, -- วันที่
+	MyDescription  VARCHAR(1000)
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_INTERESTS_1 ON BCBankInterests ( BankCode );
+create index IDX_INTERESTS_2 ON BCBankInterests ( AccountType );
+
+ -- เก็บประวัติอัตราดอกเบี้ยของธนาคาร
+create table BCInterestsLog
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10) NOT NULL, -- รหัสธนาคาร
+	AccountType	VARCHAR(10) NOT NULL, -- รหัสประเภทบัญชีธนาคาร
+	Interests		DECIMAL(19,10) DEFAULT 0.0, -- อัตราดอกเบี้ย
+	CreateDateTime	DATETIME, -- วันที่
+	MyDescription  VARCHAR(255),
+	CREATORCODE	VARCHAR(10)
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_INTERESTSL_1 ON BCInterestsLog ( BankCode );
+create index IDX_INTERESTSL_2 ON BCInterestsLog ( AccountType );
+create index IDX_INTERESTSL_3 ON BCInterestsLog ( CreateDateTime );
+
+--	Currency exchange rate
+-- jum 2-9-2004
+create table BCCurrencyExch
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,-- currency code
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, --exchange rate
+	ExchangeDate	DATETIME,
+    PRIMARY KEY(CODE)
+);
+
+CREATE INDEX IDX_CUR2_1 ON BCCurrencyExch(CODE);
+CREATE INDEX IDX_CUR2_2 ON BCCurrencyExch(ExchangeDate);
+
+-- Bank interest
+create table BCBankCurrency
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10) NOT NULL, -- รหัสธนาคาร
+	CurrencyCode	VARCHAR(10) NOT NULL,-- รหัสรหัสสกุลเงิน
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- อัตราดอกเบี้ย
+	ExchangeDate	DATETIME, -- วันที่
+	MyDescription  VARCHAR(1000)	
+	PRIMARY KEY(ROWORDER)
+);
+
+create index IDX_CURRENBANKCODE ON BCBankCurrency ( BankCode );
+create index IDX_CURRENCODE ON BCBankCurrency ( CurrencyCode );
+
+-- เก็บอัตราแลกเปลี่ยน
+create table BCCurrencyLog
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	BankCode	VARCHAR(10) NOT NULL, -- รหัสธนาคาร
+	CurrencyCode	VARCHAR(10) NOT NULL,-- รหัสรหัสสกุลเงิน
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- อัตราดอกเบี้ย
+	ExchangeDate	DATETIME, -- วันที่
+	MyDescription  VARCHAR(255),
+	CREATORCODE	VARCHAR(10),
+	CREATEDATETIME		DATETIME		
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_CURRENCYLBANKCODE ON BCCurrencyLog ( BankCode );
+create index IDX_CURRENCYLCODE ON BCCurrencyLog ( CurrencyCode );
+create index IDX_CURRENCYLEXCHANGE ON BCCurrencyLog ( ExchangeDate );
+
+
+-- เก็บรหัสบริการของธนาคาร
+create table BCBankService
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+-- เก็บค่าบริการของธนาคาร
+create table BCServiceFee
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ServiceCode	VARCHAR(10) NOT NULL,--รหัสบริการของธนาคาร
+	BankCode	VARCHAR(10) NOT NULL, -- รหัสธนาคาร
+	ServiceFee	FLOAT DEFAULT 0.0, -- อัตราค่าบริการ
+	MyDescription  VARCHAR(1000)		
+    PRIMARY KEY(ROWORDER )
+);
+create index IDX_SERVICEF_1 ON BCServiceFee ( ServiceCode );
+create index IDX_SERVICEF_2 ON BCServiceFee ( BankCode );
+
+-- เก็บรหัสสถานะเช็คเพิ่มเติม
+CREATE TABLE BCChqStatus
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	CODE	VARCHAR(10) NOT NULL,
+	NAME	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index IDX_CHQSTATUSROW ON BCChqStatus ( Roworder );
+
+-- เก็บประวัติการเปลี่ยนสถานะ้เช็ค
+CREATE TABLE BCChqStatusLog
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ChqType	SMALLINT DEFAULT 0, 	-- 1=เช็คจ่าย   0=เช็ครับ
+	CHQNUMBER	VARCHAR(20),
+	BANKCODE	VARCHAR(10),
+	BANKBRANCHCODE	VARCHAR(10),
+	StatusCODE	VARCHAR(10),--รหัสสถานะเช็คเพิ่มเติม
+	CREATORCODE	VARCHAR(10),
+	CREATEDATETIME		DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_CQLOG_CHQNUMBER ON BCChqStatusLog(CHQNUMBER);
+create index IDX_CQLOG_BANKCODE ON BCChqStatusLog(BANKCODE);
+create index IDX_CQLOG_BRANCHCODE ON BCChqStatusLog(BANKBRANCHCODE);
+
+
+CREATE TABLE BCCreditLimit
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(10) NOT NULL,
+	Name VARCHAR(50),
+	CreditCheck SMALLINT DEFAULT 0,  -- ตรวจสอบยอดวงเงิน
+	ChqReturnCheck SMALLINT DEFAULT 0, -- ตรวจสอบเช็คคืน
+	OverDueCheck SMALLINT DEFAULT 0, -- ตรวจสอบ invoice เกินกำหนดชำระ
+	OverDay SMALLINT DEFAULT 0, -- จำนวนวันที่เกินกำหนด
+	CreditExpireCheck SMALLINT DEFAULT 0, -- ตรวจสอบวงเงินหมดอายุ
+	ExpireDay SMALLINT DEFAULT 0 -- จำนวนวันหมดอายุ
+	PRIMARY KEY(Code)
+);
+--create index IDX_BCCRELIM_1 ON BCCreditLimit( Code);
+
+CREATE TABLE BCArCreditGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(10) NOT NULL,
+	Name VARCHAR(1000),
+	LimitCode VARCHAR(10),
+	IsGroup SMALLINT DEFAULT  0,-- ถ้าเป็นกลุ่ม
+	Amount  FLOAT DEFAULT 0.0, -- จำนวนเงินกลุ่ม
+	Expire_Date DATETIME,
+	StartDate DATETIME,
+	CleanValue FLOAT DEFAULT 0.0,  -- วงเงินไม่มีหลักทรัพ	
+	MyDescription VARCHAR(1000),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	MaxAmount  FLOAT DEFAULT 0.0
+	PRIMARY KEY(Code)
+);
+--create index IDX_BCCREGRP_1 ON BCArCreditGroup( Code);
+
+
+CREATE TABLE BCArCreditGrpDe
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	LineNumber  SMALLINT DEFAULT  0,
+	MasterCode VARCHAR(10) NOT NULL,
+	RefDocNo VARCHAR(20) ,
+	StartDate DATETIME,
+	Expire_Date DATETIME,	
+	MyDescription VARCHAR(1000),
+	Amount  FLOAT DEFAULT 0.0,
+	InsureType  VARCHAR(10) 		
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_CREGRPDE_CODE ON BCArCreditGrpDe( MasterCode);
+create index IDX_CREGRPDE_LINE ON BCArCreditGrpDe( LineNumber );
+create index IDX_CREGRPDE_REFNO ON BCArCreditGrpDe( RefDocNo);
+
+CREATE TABLE BCCondMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code  VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	CreatorCode	VARCHAR(10), --รหัสผู้บันทึก
+	DocDate DATETIME, --วันที่ประมวลผล
+	SystemName VARCHAR(20) NOT NULL, --เลขที่ เพื่อบอกว่าอยู่ระบบไหน เช่น BillAuto
+	MyDescription	VARCHAR(1000)
+	PRIMARY KEY(Code)
+);
+--create index IDX_CondMaster_ONE ON BCCondMaster(Code);
+create index IDX_CondMaster_TWO ON BCCondMaster(Docdate);
+
+CREATE TABLE BCCondDocDate
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code  VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	SystemName VARCHAR(20) NOT NULL, --เลขที่ เพื่อบอกว่าอยู่ระบบไหน เช่น BillAuto
+	CreatorCode	VARCHAR(10), --รหัสผู้บันทึก
+	LineNumber  SMALLINT DEFAULT  0,
+	TypeName	VARCHAR(20),  --ชื่อชนิด เช่น DocDate,DueDate
+	StartFormulaDate VARCHAR(20), --จากวันที่
+	StopFormulaDate VARCHAR(20),	--ถึงวันที่
+	StartDate DATETIME, --จากวันที่
+	StopDate DATETIME	--ถึงวันที่
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_CondDocDate_ONE ON BCCondDocDate(Code);
+create index IDX_CondDocDate_TWO ON BCCondDocDate(Linenumber);
+
+CREATE TABLE BCCondLinkCode
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code  VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	SystemName VARCHAR(20) NOT NULL, --เลขที่ เพื่อบอกว่าอยู่ระบบไหน เช่น BillAuto
+	CreatorCode	VARCHAR(10), --รหัสผู้บันทึก
+	LineNumber  SMALLINT DEFAULT  0,
+	TypeName	VARCHAR(20),  --ชื่อชนิด เช่น ArCode,ItemCode,A
+	StartCode	VARCHAR(20), 
+	StopCode	VARCHAR(20)
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_CondLinkCodeOne ON BCCondLinkCode(Code);
+create index IDX_CondLinkCodeTwo ON BCCondLinkCode(Linenumber);
+
+CREATE TABLE BCCondOrderBy
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code  VARCHAR(10) NOT NULL, --รหัสเงื่อนไข
+	SystemName VARCHAR(20) NOT NULL, --เลขที่ เพื่อบอกว่าอยู่ระบบไหน เช่น BillAuto
+	CreatorCode	VARCHAR(10), --รหัสผู้บันทึก
+	LineNumber  SMALLINT DEFAULT  0,
+	OrderCode	VARCHAR(20)
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_CondOrderByOne ON BCCondOrderBy(Code);
+create index IDX_CondOrderByTwo ON BCCondOrderBy(OrderCode);
+create index IDX_CondOrderByThree ON BCCondOrderBy(Linenumber);
+
+create table BCInsureType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50),
+	UserGroup VARCHAR(1000)	
+    PRIMARY KEY(CODE)
+);
+--create index IDX_InsureType ON BCInsureType(Code);
+
+--create table bcprocesslog
+--(
+--	ROWORDER INT NOT NULL IDENTITY(0,1),
+--	DOCNO VARCHAR(30), --document number to process
+--	MODE SMALLINT DEFAULT 0,--0=normal 1=delete 2=cancel
+--	TRANSTYPE SMALLINT, --see more information
+--	TRANSSTATE SMALLINT DEFAULT 0, --0 wait for process 1=processed
+--	INSERTTIME DATETIME ,--insert  to process log time
+--	PROCESSTIME DATETIME --process at time
+--	PRIMARY KEY(ROWORDER)
+--);
+--create index IDX_processlog1 ON bcprocesslog(Docno);
+--
+-- BC5Process Extention script
+-- Add by jum 08-02-2003 at BKK
+
+CREATE TABLE processbarcode
+(
+	roworder int  NOT NULL IDENTITY(1,1),
+	itemcode VARCHAR(50)
+	PRIMARY KEY(ROWORDER)
+);
+
+
+CREATE TABLE processstatus 
+(
+	roworder int  NOT NULL IDENTITY(1,1),
+	ItemCode varchar(50),
+	DocDate datetime,
+	ProcessFlag SMALLINT DEFAULT 0,
+	FlowStatus SMALLINT DEFAULT 1,
+	roworderref int,
+	guid	char(32),
+	processtype smallint default 0,
+	processcase smallint default 0  
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_processstatus1 ON processstatus(ItemCode);
+create index IDX_processstatus2 ON processstatus(ItemCode,Docdate);
+create index IDX_processstatus3 ON processstatus(Docdate);
+
+
+-- Jam by aom 29-03-2003
+
+CREATE TABLE processstatus2 
+(
+	roworder int  NOT NULL IDENTITY(1,1),
+	ItemCode varchar(50),
+	DocDate datetime,
+	ProcessFlag SMALLINT DEFAULT 0,
+	FlowStatus SMALLINT DEFAULT 1,
+	guid	char(32),
+	processtype smallint default 0,
+	processcase smallint default 0     
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_processstatus21 ON processstatus2(ItemCode);
+create index IDX_processstatus22 ON processstatus2(ItemCode,Docdate);
+create index IDX_processstatus23 ON processstatus2(Docdate);
+
+CREATE TABLE processstock 
+(
+	RowOrder int  NOT NULL IDENTITY(1,1),
+	ItemCode VARCHAR(50),
+	DocDate datetime,
+	ProcessFlag SMALLINT DEFAULT 0,
+	FlowStatus SMALLINT DEFAULT 1,
+	guid	char(32),
+	processtype smallint default 0,
+	processcase smallint default 0 
+	PRIMARY KEY(ROWORDER) 
+);
+create index IDX_processstock1 ON processstock(ItemCode);
+create index IDX_processstock2 ON processstock(ItemCode,Docdate);
+create index IDX_processstock3 ON processstock(Docdate);
+
+CREATE TABLE processdoc 
+(
+	RowOrder int  NOT NULL IDENTITY(1,1),
+	DocNo VARCHAR(50),
+	DocType int DEFAULT 0,
+	ProcessFlag SMALLINT DEFAULT 0,
+	guid	char(32)  
+	PRIMARY KEY(ROWORDER)	
+);
+create index IDX_processdoc1 ON processdoc(DocNo);
+
+CREATE TABLE processstatus3
+(
+	roworder int  NOT NULL IDENTITY(1,1),
+	ItemCode varchar(50),
+	DocDate datetime,
+	ProcessFlag SMALLINT DEFAULT 0,
+	FlowStatus SMALLINT DEFAULT 1,
+	roworderref int,
+	guid	char(32),
+	processtype smallint default 0,
+	processcase smallint default 0  
+	PRIMARY KEY(ROWORDER)
+);
+create index IDX_processstatus31 ON processstatus3(ItemCode);
+create index IDX_processstatus32 ON processstatus3(ItemCode,Docdate);
+create index IDX_processstatus33 ON processstatus3(Docdate);
+
+-- Firm Industry : Modify  17/12/2545  by or CommissionOil
+create table BCComOil
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AtMonth	SMALLINT DEFAULT 0,	-- ประจำเดือน 0 = มกราคม ...
+	AtYear SMALLINT DEFAULT 0, -- ประจำปี
+	AtDate		DATETIME,  -- พิมพ์ ณ วันที่
+	CarPerKM	FLOAT DEFAULT 0.0,
+	BikePerKM	 FLOAT DEFAULT 0.0,
+	Remark		VARCHAR(1000),
+	Amount		FLOAT DEFAULT 0.0,
+
+	PRIMARY KEY (ROWORDER)
+);
+create index IDX_COMOIL_AM ON BCComOil( AtMonth );
+create index IDX_COMOIL_YM ON BCComOil(AtYear,AtMonth );
+
+create table BCComOilSub
+(
+	ROWORDER 	INT NOT NULL IDENTITY(0,1),		
+	AtMonth	SMALLINT DEFAULT 0,	-- ประจำเดือน
+	AtYear SMALLINT DEFAULT 0, -- ประจำปี
+	SaleCode		VARCHAR(30),  -- พิมพ์ ณ วันที่
+	TargetAmount	FLOAT DEFAULT 0.0, -- เป้ายอดขาย
+	ReceiptAmount	 FLOAT DEFAULT 0.0, -- ยอดรับเงินสุทธิ
+	SaleAmount		FLOAT DEFAULT 0.0, -- ยอดขายสุทธิ(รวม E)
+	PercentTarget		FLOAT DEFAULT 0.0, -- %เป้ายอดขาย
+	ESaleAmount		FLOAT DEFAULT 0.0,  -- ยอดขาย E 
+	SaleTotalAmount		FLOAT DEFAULT 0.0,  -- ยอดขายสุทธิหักยอดขาย E
+	ComRate		FLOAT DEFAULT 0.0,  -- อัตราค่าคอม
+	ComCalAmount		FLOAT DEFAULT 0.0, -- จากการคำนวณค่าคอม
+	TrueReceiptAmount		FLOAT DEFAULT 0.0,  -- รับจริง(หัก 50 %)
+	CarLicense		VARCHAR(20), -- ทะเบียนรถ
+	KM		FLOAT DEFAULT 0.0, -- ระยะทาง
+	OilCalOld		FLOAT DEFAULT 0.0, -- ค่าคอมคิดตามวิธีเดิม
+	OilCalSale		FLOAT DEFAULT 0.0, -- ค่าคอมคิดตามระบบการขาย
+	ComAmount		FLOAT DEFAULT 0.0, --รวมรายได้
+	DebitAmount		FLOAT DEFAULT 0.0, -- เพิ่มหนี้
+	DiscountAmount		FLOAT DEFAULT 0.0, -- ส่วนลดจ่าย
+	ReturnAmount		FLOAT DEFAULT 0.0, -- รับคืน
+	CarType SMALLINT DEFAULT 0	-- ประเภทรถ 0 = รถยนต์   1 = จักรยานยนต์
+	PRIMARY KEY (ROWORDER)
+);
+create index IDX_BCCOMOILSUB_ATMON ON BCComOilSub (AtMonth);
+create index IDX_BCCOMOILSUB_SALECODE ON BCComOilSub (SaleCode);
+create index IDX_BCCOMOILSUB_AYAM ON BCComOilSub (AtYear,AtMonth);
+
+-- วิธีการชำระเงิน ตัว Pro มีแล้ว
+create table BCPaymentType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCUserGroup
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(255) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+create index idx_usergroup1 on BCUserGroup(roworder);
+
+
+---------------  กำหนดราคาตั้งของสินค้า -----------------
+create table BCPriceErect
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25)  NOT NULL,
+	UnitCode VARCHAR(10) , 
+	PriceErect VARCHAR(50), -- ราคาตั้งของสินค้า สูตร
+	MyDescription	VARCHAR(1000)
+    PRIMARY KEY(ROWORDER)
+);
+create index idx_priceE1 on BCPriceErect(ItemCode);
+
+
+
+create table BCItemWarehouse
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25) NOT NULL,
+	WHCode	VARCHAR(10) NOT NULL,
+	ShelfCode	VARCHAR(10)
+    PRIMARY KEY(ROWORDER)
+);
+create index idx_ItemWH1 on BCItemWarehouse(ItemCode);
+create index idx_ItemWH2 on BCItemWarehouse(ItemCode,Whcode,ShelfCode);
+create index idx_ItemWH3 on BCItemWarehouse(WHcode);
+create index idx_ItemWH4 on BCItemWarehouse(SHelfCode);
+
+create table Reportstatus
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	sessionid varchar(50) not null,--unique report request 
+	reportid varchar(25) not null, --report id
+	isfinish smallint default 0,
+	reqtime datetime,
+	finishtime datetime,
+	StartDate datetime,
+	StopDate datetime,
+	GroupBy varchar(50),
+	outfilename VARCHAR(1000),
+	condition varchar(2000),
+	condition2 varchar(2000),
+	condition3 varchar(2000),
+	condition4 varchar(2000),
+	condition5 varchar(2000),
+	Progress int default 0
+	primary key (sessionid)
+);
+create index idx_ReportST1 on Reportstatus(ReportID);
+
+-- for report dialog by aom
+create table FieldDetail
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	IdCode VARCHAR(255),
+	TableName VARCHAR(1000),
+	FieldData VARCHAR(1000),
+	MyDescription VARCHAR(1000),
+	FieldType VARCHAR(255),
+	LinkTable VARCHAR(1000)
+	primary key (ROWORDER)
+);
+
+create index IDX_FIELDDETAIL_IDCODE on FieldDetail(IdCode);
+create index IDX_FIELDDETAIL_TWO on FieldDetail(TableName);
+create index IDX_FIELDDETAIL_THREE on FieldDetail(LinkTable);
+create index IDX_FIELDDETAIL_FOUR on FieldDetail(IdCode,LinkTable);
+
+create table FieldConfig
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	IdCode VARCHAR(255),
+	TableName VARCHAR(1000),
+	FieldData VARCHAR(1000),
+	MyDescription VARCHAR(1000),
+	FieldType VARCHAR(255),
+	LinkTable VARCHAR(1000)
+	primary key (ROWORDER)
+);
+create index IDX_FIELDFIG_IDCODE on FieldConfig(IdCode);
+create index IDX_FIELDFIG_TNAME on FieldConfig(TableName);
+create index IDX_FIELDFIG_LINK on FieldConfig(LinkTable);
+create index IDX_FIELDFIG_IDLINK on FieldConfig(IdCode,LinkTable);
+
+create table bcpovoid
+(
+	Roworder int not null IDENTITY(0,1),
+	Docno varchar(30) not null,--Document Number
+	Docdate datetime not null, --Document Date
+	DepartCode VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RequestUID varchar(10), --Requset to void
+	ApproveUID varchar(10), --Approve user 
+	TotalAmount	FLOAT default 0.0,--summary of detail amount
+	VoidReasonCode varchar(10),--void reason code
+	Remark VARCHAR(1000),       --Transaction comment
+	CreatorCode	VARCHAR(10),--create user
+	CreateDateTime	DATETIME,   --date time to create this document
+	LastEditorCode	VARCHAR(10),--Last edit user  
+	LastEditDateT	DATETIME,   --Last edit date time
+	ConfirmCode	VARCHAR(10),--Confirm user
+	ConfirmDateTime	DATETIME,   --confirm date time
+	CancelCode	VARCHAR(10),--Cancel user
+	CancelDateTime	DATETIME,   --Cancel date time
+	IsCancel smallint default 0,
+	IsProcessOK SMALLINT DEFAULT 0,
+	IsCompleteSave	SMALLINT DEFAULT 0
+	Primary Key(Docno)
+);
+
+create index idx_povoid_docdate on bcpovoid(docdate);
+create index idx_povoid1 on bcpovoid(docno,docdate);
+create index idx_povoid2 on bcpovoid(roworder);
+
+create table bcpovoidsub
+(
+	Roworder INT NOT NULL IDENTITY(0,1),
+	Docno VARCHAR(30) NOT NULL,   --Document Number
+	Docdate datetime NOT NULL, --Document Date
+	APCode VARCHAR(20),           --Supplier or Vender code
+	PONo VARCHAR(30) NOT NULL,    --PO Number to void
+	DepartCode VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),
+	GroupCode	VARCHAR(10),
+	BrandCode	VARCHAR(10),
+	TypeCode	VARCHAR(10),
+	FormatCode	VARCHAR(10),
+	ItemCode VARCHAR(35) NOT NULL,      --Product code
+	MyDescription	VARCHAR(255),       --Product comment	
+	Price FLOAT DEFAULT 0.0,            --Unit price
+	UnitCode VARCHAR(10) NOT NULL,      --Unit code
+	WHCode VARCHAR(15),
+	ShelfCode VARCHAR(15),
+	Qty FLOAT DEFAULT 0.0,            --PO Qty
+	VoidQty FLOAT DEFAULT 0.0,          --Void Qty
+	PODate datetime,
+	PODueDate datetime,
+	Amount FLOAT default 0.0,
+	VoidAmount FLOAT default 0.0,
+	CancelAll	SMALLINT DEFAULT 0,
+	IsCancel SMALLINT DEFAULT 0,        --Cancel status 1=Cancel 
+	LineNumber	SMALLINT DEFAULT 0, --Line of list
+	RefLineNumber SMALLINT DEFAULT 0,   --PO line number from PO referance doc.
+	TransState 	SMALLINT DEFAULT 0, --0 = new transaction 1 = old transaction 
+--for bcservice
+	BehindIndex	SMALLINT DEFAULT 1,
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+	Primary Key(roworder)
+);
+
+create index idx_povoids_docdate on bcpovoidsub(docdate);
+create index idx_povoids_apcode on bcpovoidsub(apcode);
+create index idx_povoids_po  on bcpovoidsub(pono);
+create index idx_povoids_Itemcode on bcpovoidsub(itemcode);
+create index idx_povoids1 on bcpovoidsub(itemcode,whcode,shelfcode,linenumber);
+create index idx_povoids2 on bcpovoidsub(apcode,pono);
+create index idx_povoidsservice on bcpovoidsub(itemcode,docdate,behindindex);
+CREATE  INDEX IDX_POVOIDISPROCESS ON bcpovoidsub(ItemCode,IsProcess);
+CREATE  INDEX IDX_POVOIDPAK1 ON bcpovoidsub(PackingRate1);
+CREATE  INDEX IDX_POVOIDPAK2 ON bcpovoidsub(PackingRate2);
+
+create table bcsovoid
+(
+	Roworder int not null IDENTITY(0,1),
+	Docno varchar(30) not null,--Document Number
+	Docdate datetime not null, --Document Date
+	DepartCode VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	RequestUID varchar(10), --Requset to void
+	ApproveUID varchar(10), --Approve user 
+	TotalAmount	FLOAT default 0.0,--summary of detail amount
+	VoidReasonCode varchar(10),--void reason code
+	Remark VARCHAR(1000),       --Transaction comment
+	CreatorCode	VARCHAR(10),--create user
+	CreateDateTime	DATETIME,   --date time to create this document
+	LastEditorCode	VARCHAR(10),--Last edit user  
+	LastEditDateT	DATETIME,   --Last edit date time
+	ConfirmCode	VARCHAR(10),--Confirm user
+	ConfirmDateTime	DATETIME,   --confirm date time
+	CancelCode	VARCHAR(10),--Cancel user
+	CancelDateTime	DATETIME,   --Cancel date time
+	IsCancel smallint default 0,
+	IsProcessOK SMALLINT DEFAULT 0,
+	IsCompleteSave	SMALLINT DEFAULT 0
+	Primary Key(Docno)
+);
+
+create index idx_sovoid_docdate on bcsovoid(docdate);
+create index idx_sovoid1 on bcsovoid(docno,docdate);
+create index idx_sovoid2 on bcsovoid(roworder);
+
+create table bcsovoidsub
+(
+	Roworder INT NOT NULL IDENTITY(0,1),
+	Docno VARCHAR(30) NOT NULL,   --Document Number
+	Docdate DATETIME NOT NULL, --Document Date
+	ARCode VARCHAR(20),           --Customer COde
+	SONo VARCHAR(30) NOT NULL,    --SO Number to void
+	DepartCode VARCHAR(10),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	CategoryCode	VARCHAR(10),
+	GroupCode	VARCHAR(10),
+	BrandCode	VARCHAR(10),
+	TypeCode	VARCHAR(10),
+	FormatCode	VARCHAR(10),
+	ItemCode VARCHAR(35) NOT NULL,      --Product code
+	MyDescription	VARCHAR(255),       --Product comment	
+	Price FLOAT DEFAULT 0.0,            --Unit price
+	UnitCode VARCHAR(10) NOT NULL,      --Unit code
+	WHCode VARCHAR(15),
+	ShelfCode VARCHAR(15),
+	Qty FLOAT DEFAULT 0.0,            --SO Qty
+	VoidQty FLOAT DEFAULT 0.0,          --Void Qty
+	SODate datetime,
+	SODueDate datetime,
+	Amount FLOAT default 0.0,
+	VoidAmount FLOAT default 0.0,
+	CancelAll	SMALLINT DEFAULT 0,
+	IsCancel SMALLINT DEFAULT 0,        --Cancel status 1=Cancel 
+	LineNumber	SMALLINT DEFAULT 0, --Line of list
+	RefLineNumber SMALLINT DEFAULT 0,   --PO line number from PO referance doc.
+	TransState 	SMALLINT DEFAULT 0, --0 = new transaction 1 = old transaction 
+--for bcservice
+	BehindIndex	SMALLINT DEFAULT 1,
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+	Primary Key(roworder)
+);
+
+create index idx_sovoids_docdate on bcsovoidsub (docdate);
+create index idx_sovoids_apcode on bcsovoidsub (arcode);
+create index idx_sovoids_so  on bcsovoidsub (sono);
+create index idx_sovoids_Itemcode on bcsovoidsub (itemcode);
+create index idx_sovoids1 on bcsovoidsub (itemcode,WHcode,ShelfCode,Linenumber);
+create index idx_sovoids2 on bcsovoidsub (docdate,docno);
+create index idx_sovoids3 on bcsovoidsub (arcode,docno);
+create index idx_sovoidsservice on bcsovoidsub (itemcode,docdate,behindindex);
+CREATE  INDEX IDX_SOVOIDISPROCESS ON bcsovoidsub(ItemCode,IsProcess);
+CREATE  INDEX IDX_SOVOIDPAK1 ON bcsovoidsub(PackingRate1);
+CREATE  INDEX IDX_SOVOIDPAK2 ON bcsovoidsub(PackingRate2);
+
+CREATE TABLE processitemreport 
+(
+	ROWORDER INT NOT NULL IDENTITY(1,1),
+	ItemCode VARCHAR(50),
+	DocDate DATETIME, 
+	sessionid VARCHAR(50),
+	guid	char(32) 
+	Primary Key(ROWORDER)
+);
+create index IDX_PROCESSOITEMREP1 ON processitemreport(ItemCode);
+create index IDX_PROCESSOITEMREP2 ON processitemreport(sessionid);
+
+
+CREATE TABLE BCCancelReason 
+(
+	ROWORDER INT NOT NULL IDENTITY(1,1),
+	Code VARCHAR(255),
+	Name VARCHAR(255),
+	UserGroup VARCHAR(1000)
+	Primary Key(ROWORDER)
+);
+create index IDX_CancelReasCode ON BCCancelReason(Code);
+
+----------------------------- มาจาก อุบล -----------------------------------
+create table  BCCAR
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	CODE	VARCHAR(10) NOT NULL, --รหัสประเภทรถ
+	NAME	VARCHAR(50) NOT NULL,	--ชื่อประเภทรถ
+    PRIMARY KEY(CODE)
+);
+create index IDX_CARROWORDER ON BCCAR(RowOrder);
+
+CREATE TABLE BCCARIDFORPO    -- บันทึกทะเบียนรถสำหรับใบสั่งซื้อ(PO) -- อุบลฯ 04/Jan/2002
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DOCNO	VARCHAR(30),  --เลขที่PO
+	CARID	VARCHAR(20),	--ทะเบียนรถ
+	TransCode 	VARCHAR(10),	--รหัสผู้ขนส่ง	
+	DocDate		DATETIME, --วันที่รับสินค้า
+	PointReceive		VARCHAR(10), --จุดรับสินค้า
+	Mydescription	VARCHAR(1000),
+	LineNumber SMALLINT DEFAULT 0,
+	COMPANYID  VARCHAR(20)
+    PRIMARY KEY(ROWORDER)
+);
+
+create index IDX_CARIDFORPO_DOCNO ON BCCARIDFORPO(DocNo);
+create index IDX_CARIDFORPO_DOCDATE ON BCCARIDFORPO(DocDate);
+create index IDX_CARIDFORPO_LINENO ON BCCARIDFORPO(LineNumber);
+create index IDX_CARIDFORPO_COMPANY ON BCCARIDFORPO(CompanyID);
+create index IDX_CARIDFORPO_TRANS ON BCCARIDFORPO(TransCode);
+create index IDX_CARIDFORPO_CARID ON BCCARIDFORPO(CarID);
+create index IDX_CARIDFORPO_NODATE ON BCCARIDFORPO(DocNo,DocDate);
+
+create table BCHistoryAdjustPrice -- ประวัติการปรับราคาขาย
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	UnitCode VARCHAR(10), -- หน่วยนับ
+	StartQty FLOAT DEFAULT 0.0, -- จากจำนวน
+	StopQty FLOAT DEFAULT 0.0,-- ถึงจำนวน
+	StartDate DATETIME, -- จากวันที่
+	StopDate DATETIME, -- ถึงวันที่
+	SaleType SMALLINT DEFAULT 0, -- ประเภทการขาย
+	TransportType SMALLINT DEFAULT 0, -- เงื่อนการขนส่ง
+	SalePrice1	VARCHAR(50),
+	SalePrice2	VARCHAR(50),
+	SalePrice3	VARCHAR(50),
+	SalePrice4	VARCHAR(50),
+	SalePrice5	VARCHAR(50),
+	SalePrice6	VARCHAR(50),
+	SalePrice7	VARCHAR(50),
+	SalePrice8	VARCHAR(50),
+	TaxType	SMALLINT DEFAULT 0, -- 0=แยกนอก 1=รวมใน
+	LineNumber SMALLINT DEFAULT 0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	AdjustDesc	VARCHAR(20),
+	CreatorCode	VARCHAR(10),
+	DocNo VARCHAR(20),
+	CreateDateTime	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_HISADJPRICE1 ON BCHistoryAdjustPrice(ItemCode);
+create index IDX_HISADJPRICE2 ON BCHistoryAdjustPrice(ItemCode,UnitCode);
+create index IDX_HISADJPRICE3 ON BCHistoryAdjustPrice(LineNumber);
+create index IDX_HISADJPRICE4 ON BCHistoryAdjustPrice(ItemCode,UnitCode);
+
+create table BCPriceList2Head 
+(
+	ROWORDER  INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	StartQty FLOAT DEFAULT 0.0,
+	StopQty FLOAT DEFAULT 0.0,
+	StartDate DATETIME, 
+	StopDate DATETIME,
+	SaleType SMALLINT DEFAULT 0,
+	SaleTypeName  VARCHAR(50),
+	TransportName  VARCHAR(50),
+	TaxName  VARCHAR(50),
+	TransportType SMALLINT DEFAULT 0, 
+	TaxType	SMALLINT DEFAULT 0,
+	TransState SMALLINT DEFAULT 0
+	PRIMARY KEY(DocNo)
+);
+create index IDX_PRICELIST2_1 ON BCPriceList2Head(RowOrder);
+
+
+create table BCSysUpdatePrice (
+	ROWORDER  INT NOT NULL IDENTITY(0,1),
+	FieldName VARCHAR(1000) NOT NULL,
+	SetTemplate SMALLINT DEFAULT 0 NOT NULL,
+	Length VARCHAR(10),
+	UserType VARCHAR(50),
+	MyDescription VARCHAR(1000),
+	UseFlag SMALLINT DEFAULT 0,
+	LinkTable VARCHAR(255),
+	DataType VARCHAR(50),
+	TemplateName VARCHAR(50)
+	PRIMARY KEY(ROWORDER,SetTemplate)
+);
+
+CREATE TABLE BCRECPOINT 
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ProductCode	VARCHAR(20),  
+	Code	VARCHAR(10) NOT NULL,	
+	Priority SMALLINT DEFAULT 0,
+	IsWarehouse  SMALLINT DEFAULT 0, 
+	LineNumber SMALLINT DEFAULT 0 
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_RECPOINT_1 ON BCRECPOINT(ProductCode);
+create index IDX_RECPOINT_2 ON BCRECPOINT(Code);
+create index IDX_RECPOINT_3 ON BCRECPOINT(ProductCode,Priority);
+
+create table BCReceiveMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+CREATE TABLE BCRECPRODUCT 
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ProductCode	VARCHAR(20),  
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	UnitCode	VARCHAR(10),
+	Priority SMALLINT DEFAULT 0,
+	MinAmount  FLOAT DEFAULT 0.0,
+	MaxAmount  FLOAT DEFAULT 0.0,
+	LineNumber SMALLINT DEFAULT 0 
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_RECPRODT_1 ON BCRECPRODUCT(ProductCode,WhCode,ShelfCode,Linenumber);
+create index IDX_RECPRODT_2 ON BCRECPRODUCT(LineNumber);
+create index IDX_RECPRODT_3 ON BCRECPRODUCT(WhCode);
+create index IDX_RECPRODT_4 ON BCRECPRODUCT(ShelfCode);
+create index IDX_RECPRODT_5 ON BCRECPRODUCT(ProductCode);
+
+---------------- เก็บประวัติการเปลี่ยน master Item,Ap,Ar -- jeab 2003-04-17 -------------
+create table BCHistoryMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	OldCode	VARCHAR(25)  NOT NULL,
+	EventDate DATETIME, --change datetime
+	EditorCode VARCHAR(10), --change by
+	NewCode	VARCHAR(25),
+	TransKey	VARCHAR(255)
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_HISMASTER1 ON BCHistoryMaster(EventDate);
+create index IDX_HISMASTER2 ON BCHistoryMaster(OldCode);
+
+----------------BC Service ใช้ตรวจสอบยอดคงเหลือย้อนหลัง Aom 02-05-2003--------------
+
+create table FunctionStock
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	SessionId VARCHAR(1000),
+	FunctionId INT, --101 = get stock qty
+	ItemCode VARCHAR(800),
+	IsFinish INT,
+	FinalDate DATETIME,
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_FUNCTIONSTOCK1 ON FunctionStock(itemcode);
+
+
+create table FunctionStockResult
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	SessionId VARCHAR(1000),
+	ItemCode VARCHAR(50),
+	UnitCode VARCHAR(50),
+	WHCode VARCHAR(50),
+	Location VARCHAR(50),
+	StockQty FLOAT
+    PRIMARY KEY(ROWORDER)
+);
+create index IDX_FUNCTIONSTOCKRESULT ON FunctionStockResult(sessionid);
+create index IDX_FUNCTIONSTOCKRESUL2T ON FunctionStockResult(itemcode);
+
+---BC Service By Aom 06-05-2003---
+create table BCSTKLocation
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode VARCHAR(50),
+	WHCode VARCHAR(10),
+	ShelfCode VARCHAR(15),
+	UnitCode VARCHAR(10),
+	Qty FLOAT,
+	DocDate DATETIME,
+    PRIMARY KEY(ROWORDER)	
+);
+
+create index IDX_BCSTKLOCATION ON BCSTKLocation(ItemCode);
+create index IDX_BCSTKLOCATION2 ON BCSTKLocation(ItemCode,WHCode,ShelfCode);
+
+create table bcitemcolor
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(CODE)
+);
+
+create table bcitemsize
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(CODE)
+);
+
+
+create table bcitemstyle
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(CODE)
+);
+
+create table bcitempublisher
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+	PRIMARY KEY(CODE)
+);
+
+-------------------------start A-FOSS script----------------
+create table BCInquiry	--สอบถามรายการสินค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	Varchar(20)	NOT NULL,
+	DocDate	Datetime		NOT NULL,	--ต้องบันทึกทั้งวันที่และเวลา
+	DepartCode	Varchar(10),
+	SaleCode		Varchar(10),
+	ArCode		Varchar(20),
+	Amount		FLOAT	DEFAULT 0.0, 	-- ยอดรวมทั้งเอกสาร
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	RecurName	VARCHAR(40)
+	PRIMARY KEY(DOCNO)
+);
+create table BCInquirySub	 --สอบถามรายการสินค้าย่อย
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo		Varchar(20) NOT NULL,
+	DocDate		Datetime NOT NULL,--ต้องบันทึกทั้งวันที่และเวลา
+	LineNumber	SmallInt	NOT NULL DEFAULT 0,--ลำดับที่สินค้า
+	ItemCode		Varchar(25),	--รหัสสินค้า  (มีค่าเป็น NULL ได้)
+	Description	VARCHAR(255),	--รายละเอียดสินค้า
+	Qty		FLOAT	DEFAULT 0.0,
+	 Price		FLOAT	DEFAULT 0.0,
+	 Amount		FLOAT	DEFAULT 0.0,
+	 UnitCode		Varchar(10),
+	 TypeCode		Varchar(10),
+	 Specification	VARCHAR(1000),	--คุณสมบัติ	 
+	DepartCode	Varchar(10),
+	SaleCode		Varchar(10),
+	ArCode		Varchar(20),	
+	ManufactoryCode	Varchar(10),	--รหัสผู้ผลิต (เพิ่ม table ด้วย***)
+	AFT_remark	VARCHAR(255),	--ใช้เฉพาะใน A-FOSS
+	UnitWeight	FLOAT	DEFAULT 0.0,	--ใช้เฉพาะใน A-FOSS
+	WeightUnitCode	Varchar(10),	--หน่วยนับของ unitWeight
+	LeadTime		varchar(60),	--ใช้เฉพาะใน A-FOSS
+	OfferedBy		VARCHAR(255),		--ใช้เฉพาะใน A-FOSS
+	OfferedDate	Datetime,
+	HS_SMX_remark	VARCHAR(255),
+	ItemAdded		Smallint	DEFAULT 0,	--เพิ่มเข้าไปในรายการสินค้าหรือยัง 0= ไม่  , 1 = เพิ่มแล้ว	
+	CreatorCode	Varchar(10),
+	CreateDateTime	Datetime,	
+	LastEditorCode	Varchar(10),
+	LastEditDate	Datetime,
+	ConfirmCode	Varchar(10),
+	ConfirmDate	Datetime,	
+	CancelCode	Varchar(10),
+	CancelDate	Datetime
+	PRIMARY KEY(DocNo,LineNumber)
+);
+create table BCManufactory	--โรงงานผู้ผลิต
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10)  NOT NULL,
+	Name	VARCHAR(255)
+    PRIMARY KEY(Code)
+);
+
+create table BCTermCondition	--รายการเงื่อนไขให้เลือก (A-FOSS)
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(2)  NOT NULL,
+	Name	VARCHAR(50)
+    PRIMARY KEY(Code)
+);
+
+create table BCTermCondition1	--รายการเงื่อนไขให้เลือก (A-FOSS)
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(2)  NOT NULL,
+	Name	VARCHAR(50)
+    PRIMARY KEY(Code)
+);
+
+create table BCDeliveryOrderCondition	--(Term & Conditions) เงื่อนไขใบเสนอราคา
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	Varchar(20)	NOT NULL,	--เลขทีใบเสนอราคา	
+	LineNumber	Smallint	NOT NULL,	--ลำดับที่
+	TermCondition	Varchar(50),		--Table ref:- BCTermCondition.Name
+	Data		Varchar(20)		--ข้อมูล
+    PRIMARY KEY(DocNo,LineNumber)
+);
+create table BCArInstalment	--ตารางการแบ่งงวดของลูกหนี้
+(	
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo		Varchar(20)	NOT NULL,--เลขที่ออกบิลล์
+	DocDate		Datetime		NOT NULL,--วันที่เอกสาร
+	NumOfInstalment	Smallint	DEFAULT 1,	--จำนวนงวด
+	StartReceiptDate	Datetime,			--เริ่มงวดแรกชำระวันที่
+	InstalmentNo	Smallint DEFAULT 1,	--เลขที่งวด เริ่มต้นจาก 1,2,3,.....	
+	ArCode		Varchar(20),		--รหัสสินค้า
+	DueDate		Datetime,			--วันที่ครบกำหนด
+	ReceiptDate	Datetime,			--วันที่รับชำระจริง
+	Amount		FLOAT	DEFAULT 0.0,	--จำนวนเงินงวด
+	PayBillStatus	Smallint	DEFAULT 0,	--0=ยังไม่วางบิล 1=วางบิล
+	BalanceAmount	FLOAT	DEFAULT 0.0,	--จำนวนเงินคงเหลือ	
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10)	DEFAULT 1.0
+	PRIMARY KEY(DocNo,InstalmentNo)
+);
+
+create table BCApInstalment	--ตารางการแบ่งงวดของเจ้าหนี้
+(	
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo		Varchar(20)	NOT NULL,--เลขที่ออกบิลล์
+	DocDate		Datetime		NOT NULL,--วันที่เอกสาร
+	NumOfInstalment	Smallint	DEFAULT 1,	--จำนวนงวด
+	StartPayDate		Datetime,		--เริ่มชำระงวดแรกวันที่
+	InstalmentNo	Smallint DEFAULT 1,	--เลขที่งวด เริ่มต้นจาก 1,2,3,.....	
+	ApCode		Varchar(20),		--รหัสสินค้า
+	DueDate		Datetime,			--วันที่ครบกำหนด
+	PaidDate		Datetime,			--วันที่จ่ายจริง
+	Amount		FLOAT	DEFAULT 0.0,	--จำนวนเงินงวด
+	PayBillStatus	Smallint	DEFAULT 0,	--0=ยังไม่วางบิล 1=วางบิล
+	BalanceAmount	FLOAT	DEFAULT 0.0,	--จำนวนเงินคงเหลือ
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10)	DEFAULT	1.0
+	PRIMARY KEY(DocNo,InstalmentNo)
+);
+
+--Purpose Store current connection
+-- jum 01-08-2003
+create table processconnection
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	SessionID	 varchar(128) not null,
+	ComputerName VARCHAR(255) not null,
+	UserID varchar(50) not null,
+	IPAddress varchar(300),
+	StartTime datetime,
+	Status smallint default 0, --0 None active,1 Acctice with process
+	MessageText VARCHAR(1000)
+	PRIMARY KEY(SessionID)
+);
+
+create index IDX_processconn_1 on processconnection(sessionid);
+create index IDX_processconn_2 on processconnection(computername);
+create index IDX_processconn_3 on processconnection(ipaddress);
+create index IDX_processconn_4 on processconnection(starttime);
+
+create table BCArBarCodeMaster
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Barcode	VARCHAR(20),
+	BarcodeName	VARCHAR(1000), -- ชื่อ Barcode
+	ArCode	VARCHAR(20),
+	Remark	VARCHAR(1000),
+	ActiveStatus	SMALLINT DEFAULT 1
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE TABLE BCArPriceList
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	ArCode		VARCHAR(20),
+	ArGroupCode		VARCHAR(1000),
+	UnitCode 	VARCHAR(10),
+	Remark	VARCHAR(1000),
+	FromQty	FLOAT DEFAULT 0.0,
+	ToQty		FLOAT DEFAULT 0.0,
+	PriceAmount1	FLOAT DEFAULT 0.0,
+	PriceAmount2	FLOAT DEFAULT 0.0,
+	PriceAmount3	FLOAT DEFAULT 0.0,
+	PriceAmount4	FLOAT DEFAULT 0.0,
+	PriceAmount5	FLOAT DEFAULT 0.0,
+	PriceAmount6	FLOAT DEFAULT 0.0,
+	PriceAmount7	FLOAT DEFAULT 0.0,
+	PriceAmount8	FLOAT DEFAULT 0.0,
+	PriceFormula1	VARCHAR(1000),
+	PriceFormula2	VARCHAR(1000),
+	PriceFormula3	VARCHAR(1000),
+	PriceFormula4	VARCHAR(1000),
+	PriceFormula5	VARCHAR(1000),
+	PriceFormula6	VARCHAR(1000),
+	PriceFormula7	VARCHAR(1000),
+	PriceFormula8	VARCHAR(1000),
+	LineNumber SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCStkWarehouseHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	UnitCode	VARCHAR(10),
+	Qty	FLOAT DEFAULT 0.0,
+	ReserveQty	FLOAT DEFAULT 0.0,
+	RemainInQty	FLOAT DEFAULT 0.0,
+	RemainOutQty	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	ItemPriority	SMALLINT DEFAULT 0, -- ลำดับความสำคัญ
+	ReadyQtyAll FLOAT DEFAULT 0.0, -- ยอดที่ขายได้
+	ReserveQtyAll FLOAT DEFAULT 0.0, -- 
+	RemainQtyAll FLOAT DEFAULT 0.0, -- 
+	RemainOutQtyAll	FLOAT DEFAULT 0.0,
+	averagecost FLOAT DEFAULT 0.0,
+	DocDate	DATETIME
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_WHSTKITEMHIS ON BCStkWarehouseHistory(ItemCode);
+CREATE  INDEX IDX_WHSTKWHHIS ON BCStkWarehouseHistory(WHCode);
+CREATE  INDEX IDX_WHSTKSHFHIS ON BCStkWarehouseHistory(ShelfCode);
+CREATE  INDEX IDX_WHSTKUNITHIS ON BCStkWarehouseHistory(UnitCode);
+CREATE  INDEX IDX_WHSTKITEM1HIS ON BCStkWarehouseHistory(ItemCode,UnitCode,WhCode,ShelfCode);
+
+create table BCSTKLocationHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode VARCHAR(50),
+	WHCode VARCHAR(10),
+	ShelfCode VARCHAR(15),
+	UnitCode VARCHAR(10),
+	Qty FLOAT,
+	DocDate DATETIME,
+    PRIMARY KEY(ROWORDER)	
+);
+
+create index IDX_BCSTKLOCATIONHIS ON BCSTKLocationHistory(ItemCode);
+
+create table BCLotMasterHistory
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25) NOT NULL,
+	LotNumber	VARCHAR(50) NOT NULL,
+	WHCode	VARCHAR(10) NOT NULL,
+	ShelfCode	VARCHAR(15) NOT NULL,
+	BillLineNumber	SMALLINT DEFAULT 0,
+	TransType	SMALLINT DEFAULT 0, -- ตาม MyType ของรายวันที่เพิ่ม
+	TransPeriod SMALLINT DEFAULT 0, -- ข้อมูลเกิดใน Period ที่
+	DocNo	VARCHAR(50) NOT NULL,
+	DocDate	DATETIME,
+	ExpireDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	Qty	FLOAT DEFAULT 0.0, -- ยอดรับครั้งแรก
+	Cost	FLOAT DEFAULT 0.0, -- ต้นทุนครั้งแรก
+	Amount	FLOAT DEFAULT 0.0 NOT NULL, -- มูลค่าครั้งแรก
+	BalAmount	FLOAT DEFAULT 0.0, -- ยอดมูลค่าคงเหลือปัจุบัน
+	BalQty	FLOAT DEFAULT 0.0, -- ยอดจำนวนคงเหลือปัจุบัน
+	BalCost	FLOAT DEFAULT 0.0, -- ต้นทุนคงเหลือปัจุบัน Jeab 1/11/2545
+	BalQtyPeriod1 FLOAT DEFAULT 0.0,
+	BalQtyPeriod2 FLOAT DEFAULT 0.0,
+	BalQtyPeriod3 FLOAT DEFAULT 0.0,
+	BalQtyPeriod4 FLOAT DEFAULT 0.0,
+	BalQtyPeriod5 FLOAT DEFAULT 0.0,
+	BalQtyPeriod6 FLOAT DEFAULT 0.0,
+	BalQtyPeriod7 FLOAT DEFAULT 0.0,
+	BalQtyPeriod8 FLOAT DEFAULT 0.0,
+	BalQtyPeriod9 FLOAT DEFAULT 0.0,
+	BalQtyPeriod10 FLOAT DEFAULT 0.0,
+	BalQtyPeriod11 FLOAT DEFAULT 0.0,
+	BalQtyPeriod12 FLOAT DEFAULT 0.0,
+	BalQtyPeriod13 FLOAT DEFAULT 0.0,
+	BalQtyPeriod14 FLOAT DEFAULT 0.0,
+	BalQtyPeriod15 FLOAT DEFAULT 0.0,
+	BalQtyPeriod16 FLOAT DEFAULT 0.0,
+	BalQtyPeriod17 FLOAT DEFAULT 0.0,
+	BalQtyPeriod18 FLOAT DEFAULT 0.0,
+	BalQtyPeriod19 FLOAT DEFAULT 0.0,
+	BalQtyPeriod20 FLOAT DEFAULT 0.0,
+	BalQtyPeriod21 FLOAT DEFAULT 0.0,
+	BalQtyPeriod22 FLOAT DEFAULT 0.0,
+	BalQtyPeriod23 FLOAT DEFAULT 0.0,
+	BalQtyPeriod24 FLOAT DEFAULT 0.0,
+	BalQtyPeriod25 FLOAT DEFAULT 0.0,
+	DocDateHistory DATETIME,
+	reflot varchar(50) -- Jum use
+    PRIMARY KEY(RowOrder)
+);
+
+CREATE  INDEX IDX_LTMLINEHIS ON BCLotMasterHistory(BillLineNumber);
+CREATE  INDEX IDX_LTMITEMHIS ON BCLotMasterHistory(ItemCode);
+CREATE  INDEX IDX_LTMTTYPHIS ON BCLotMasterHistory(TransType);
+CREATE  INDEX IDX_LTMTDATEHIS ON BCLotMasterHistory(DocDateHistory);
+
+------------------- รับเงินล่วงหน้า ------------------
+create table BCARDepositSpecial
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35) NOT NULL,
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	TotalAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0, -- TotalAmount - SumOfWTax
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	RefNo	VARCHAR(35),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsReturnFLOAT SMALLINT DEFAULT 0, -- 1=ลดหนี้หรือคืนเงิน
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(35),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PaymentTypeCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_ARDEPS_DATE ON BCARDepositSpecial(DocDate);
+CREATE  INDEX IDX_ARDEPS_AR ON BCARDepositSpecial(ArCode);
+CREATE  INDEX IDX_ARDEPS_BAL ON BCARDepositSpecial(BillBalance);
+
+------------------- รับคืนเงินล่วงหน้า ------------------
+create table BCReturnDepSpecial
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35) NOT NULL,
+	DocDate	DATETIME,
+	EarnestNo VARCHAR(35), -- เลขที่ใบรับเงินมัดจำ
+	ArCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	CreditDay	SMALLINT DEFAULT 0,
+	SaleCode	VARCHAR(10),
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	TotalAmount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	EarnestAmount	FLOAT DEFAULT 0.0, -- ยอดเงินของเงินมัดจำ
+	EarnestBalance	FLOAT DEFAULT 0.0, -- ยอดเงินคงเหลือของเงินมัดจำ
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	GLFormat	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsReturnFLOAT SMALLINT DEFAULT 0, -- 1=ลดหนี้หรือคืนเงิน
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(35),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923 
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_RTDEPS_DATE ON BCReturnDepSpecial(DocDate);
+CREATE  INDEX IDX_RTDEPS_AR ON BCReturnDepSpecial(ArCode);
+--CREATE  INDEX IDX_RTDEPS_BAL ON BCReturnDepSpecial(BillBalance);
+
+------------------- จ่ายเงินล่วงหน้า ------------------
+create table BCAPDepositSpecial
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35) NOT NULL,
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	TotalAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0, -- TotalAmount - SumOfWTax
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	RefNo	VARCHAR(35),
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(35),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PaymentTypeCode	VARCHAR(10),
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_APDEPS_DATE ON BCAPDepositSpecial(DocDate);
+CREATE  INDEX IDX_APDEPS_AR ON BCAPDepositSpecial(ApCode);
+--CREATE  INDEX IDX_APDEPS_BAL ON BCAPDepositSpecial(BillBalance);
+
+------------------- ส่งคืนเงินล่วงหน้า ------------------
+create table BCAPReturnDepSpecial
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35) NOT NULL,
+	DocDate	DATETIME,
+	EarnestNo VARCHAR(35), -- เลขที่ใบรับเงินมัดจำ
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SaleCode	VARCHAR(10),
+	IsConfirm	SMALLINT DEFAULT 0,
+	CreditDay	SMALLINT DEFAULT 0,
+	DueDate	DATETIME,
+	MyDescription	VARCHAR(1000),
+	TotalAmount	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	BillBalance	FLOAT DEFAULT 0.0, -- ถ้าเป็นรวมใน=NetAmount ถ้าเป็นแยกนอก=NetAmount ถอด Tax
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	EarnestAmount	FLOAT DEFAULT 0.0, -- ยอดเงินของเงินมัดจำ
+	EarnestBalance	FLOAT DEFAULT 0.0, -- ยอดเงินคงเหลือของเงินมัดจำ
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	GLFormat	VARCHAR(5),
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(35),
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	JobNo VARCHAR(20) -- Job สำหรับ GL -- 2003-07-25
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_APRTDEPS_DATE ON BCAPReturnDepSpecial(DocDate);
+CREATE  INDEX IDX_APRTDEPS_AP ON BCAPReturnDepSpecial(ApCode);
+--CREATE  INDEX IDX_APRTDEPS_BAL ON BCAPReturnDepSpecial(BillBalance);
+
+CREATE TABLE BCLOTMASTERPERIOD
+(
+	ROWORDER int NOT NULL IDENTITY (0, 1),
+	ITEMCODE varchar(25) NOT NULL ,
+	LOTNUMBER varchar(50) NOT NULL ,
+	WHCODE varchar (10),
+	SHELFCODE varchar (15),
+	BILLLINENUMBER smallint DEFAULT 0,
+	TRANSTYPE smallint DEFAULT 0,
+	TRANSPERIOD smallint DEFAULT 0,
+	DOCNO varchar (20),
+	DOCDATE datetime NULL ,
+	EXPIREDATE datetime NULL ,
+	UNITCODE varchar (10),
+	MYDESCRIPTION varchar (200),
+	ISTRANS00 smallint DEFAULT 0,
+	ISTRANS01 smallint DEFAULT 0,
+	ISTRANS02 smallint DEFAULT 0,
+	ISTRANS03 smallint DEFAULT 0,
+	ISTRANS04 smallint DEFAULT 0,
+	ISTRANS05 smallint DEFAULT 0,
+	ISTRANS06 smallint DEFAULT 0,
+	ISTRANS07 smallint DEFAULT 0,
+	ISTRANS08 smallint DEFAULT 0,
+	ISTRANS09 smallint DEFAULT 0,
+	ISTRANS10 smallint DEFAULT 0,
+	ISTRANS11 smallint DEFAULT 0,
+	ISTRANS12 smallint DEFAULT 0,
+	ISTRANS13 smallint DEFAULT 0,
+	ISTRANS14 smallint DEFAULT 0,
+	ISTRANS15 smallint DEFAULT 0,
+	ISTRANS16 smallint DEFAULT 0,
+	ISTRANS17 smallint DEFAULT 0,
+	ISTRANS18 smallint DEFAULT 0,
+	ISTRANS19 smallint DEFAULT 0,
+	ISTRANS20 smallint DEFAULT 0,
+	ISTRANS21 smallint DEFAULT 0,
+	ISTRANS22 smallint DEFAULT 0,
+	ISTRANS23 smallint DEFAULT 0,
+	ISTRANS24 smallint DEFAULT 0,
+	ISTRANS25 smallint DEFAULT 0,
+	ISTRANS26 smallint DEFAULT 0,
+	ISTRANS27 smallint DEFAULT 0,
+	ISTRANS28 smallint DEFAULT 0,
+	ISTRANS29 smallint DEFAULT 0,
+	ISTRANS30 smallint DEFAULT 0,
+	ISTRANS31 smallint DEFAULT 0,
+	ISTRANS32 smallint DEFAULT 0,
+	ISTRANS33 smallint DEFAULT 0,
+	ISTRANS34 smallint DEFAULT 0,
+	ISTRANS35 smallint DEFAULT 0,
+	ISTRANS36 smallint DEFAULT 0,
+	ISTRANS37 smallint DEFAULT 0,
+	ISTRANS38 smallint DEFAULT 0,
+	ISTRANS39 smallint DEFAULT 0,
+	ISTRANS40 smallint DEFAULT 0,
+	ISTRANS41 smallint DEFAULT 0,
+	ISTRANS42 smallint DEFAULT 0,
+	ISTRANS43 smallint DEFAULT 0,
+	ISTRANS44 smallint DEFAULT 0,
+	ISTRANS45 smallint DEFAULT 0,
+	ISTRANS46 smallint DEFAULT 0,
+	ISTRANS47 smallint DEFAULT 0,
+	ISTRANS48 smallint DEFAULT 0,
+	ISTRANS49 smallint DEFAULT 0,
+	ISTRANS50 smallint DEFAULT 0,
+	ISTRANS51 smallint DEFAULT 0,
+	ISTRANS52 smallint DEFAULT 0,
+	ISTRANS53 smallint DEFAULT 0,
+	ISTRANS54 smallint DEFAULT 0,
+	ISTRANS55 smallint DEFAULT 0,
+	ISTRANS56 smallint DEFAULT 0,
+	ISTRANS57 smallint DEFAULT 0,
+	ISTRANS58 smallint DEFAULT 0,
+	ISTRANS59 smallint DEFAULT 0,
+	ISTRANS60 smallint DEFAULT 0,
+	QTY00 FLOAT DEFAULT 0.0,
+	QTY01 FLOAT DEFAULT 0.0,
+	QTY02 FLOAT DEFAULT 0.0,
+	QTY03 FLOAT DEFAULT 0.0,
+	QTY04 FLOAT DEFAULT 0.0,
+	QTY05 FLOAT DEFAULT 0.0,
+	QTY06 FLOAT DEFAULT 0.0,
+	QTY07 FLOAT DEFAULT 0.0,
+	QTY08 FLOAT DEFAULT 0.0,
+	QTY09 FLOAT DEFAULT 0.0,
+	QTY10 FLOAT DEFAULT 0.0,
+	QTY11 FLOAT DEFAULT 0.0,
+	QTY12 FLOAT DEFAULT 0.0,
+	QTY13 FLOAT DEFAULT 0.0,
+	QTY14 FLOAT DEFAULT 0.0,
+	QTY15 FLOAT DEFAULT 0.0,
+	QTY16 FLOAT DEFAULT 0.0,
+	QTY17 FLOAT DEFAULT 0.0,
+	QTY18 FLOAT DEFAULT 0.0,
+	QTY19 FLOAT DEFAULT 0.0,
+	QTY20 FLOAT DEFAULT 0.0,
+	QTY21 FLOAT DEFAULT 0.0,
+	QTY22 FLOAT DEFAULT 0.0,
+	QTY23 FLOAT DEFAULT 0.0,
+	QTY24 FLOAT DEFAULT 0.0,
+	QTY25 FLOAT DEFAULT 0.0,
+	QTY26 FLOAT DEFAULT 0.0,
+	QTY27 FLOAT DEFAULT 0.0,
+	QTY28 FLOAT DEFAULT 0.0,
+	QTY29 FLOAT DEFAULT 0.0,
+	QTY30 FLOAT DEFAULT 0.0,
+	QTY31 FLOAT DEFAULT 0.0,
+	QTY32 FLOAT DEFAULT 0.0,
+	QTY33 FLOAT DEFAULT 0.0,
+	QTY34 FLOAT DEFAULT 0.0,
+	QTY35 FLOAT DEFAULT 0.0,
+	QTY36 FLOAT DEFAULT 0.0,
+	QTY37 FLOAT DEFAULT 0.0,
+	QTY38 FLOAT DEFAULT 0.0,
+	QTY39 FLOAT DEFAULT 0.0,
+	QTY40 FLOAT DEFAULT 0.0,
+	QTY41 FLOAT DEFAULT 0.0,
+	QTY42 FLOAT DEFAULT 0.0,
+	QTY43 FLOAT DEFAULT 0.0,
+	QTY44 FLOAT DEFAULT 0.0,
+	QTY45 FLOAT DEFAULT 0.0,
+	QTY46 FLOAT DEFAULT 0.0,
+	QTY47 FLOAT DEFAULT 0.0,
+	QTY48 FLOAT DEFAULT 0.0,
+	QTY49 FLOAT DEFAULT 0.0,
+	QTY50 FLOAT DEFAULT 0.0,
+	QTY51 FLOAT DEFAULT 0.0,
+	QTY52 FLOAT DEFAULT 0.0,
+	QTY53 FLOAT DEFAULT 0.0,
+	QTY54 FLOAT DEFAULT 0.0,
+	QTY55 FLOAT DEFAULT 0.0,
+	QTY56 FLOAT DEFAULT 0.0,
+	QTY57 FLOAT DEFAULT 0.0,
+	QTY58 FLOAT DEFAULT 0.0,
+	QTY59 FLOAT DEFAULT 0.0,
+	QTY60 FLOAT DEFAULT 0.0,
+	COST00 FLOAT DEFAULT 0.0,
+	COST01 FLOAT DEFAULT 0.0,
+	COST02 FLOAT DEFAULT 0.0,
+	COST03 FLOAT DEFAULT 0.0,
+	COST04 FLOAT DEFAULT 0.0,
+	COST05 FLOAT DEFAULT 0.0,
+	COST06 FLOAT DEFAULT 0.0,
+	COST07 FLOAT DEFAULT 0.0,
+	COST08 FLOAT DEFAULT 0.0,
+	COST09 FLOAT DEFAULT 0.0,
+	COST10 FLOAT DEFAULT 0.0,
+	COST11 FLOAT DEFAULT 0.0,
+	COST12 FLOAT DEFAULT 0.0,
+	COST13 FLOAT DEFAULT 0.0,
+	COST14 FLOAT DEFAULT 0.0,
+	COST15 FLOAT DEFAULT 0.0,
+	COST16 FLOAT DEFAULT 0.0,
+	COST17 FLOAT DEFAULT 0.0,
+	COST18 FLOAT DEFAULT 0.0,
+	COST19 FLOAT DEFAULT 0.0,
+	COST20 FLOAT DEFAULT 0.0,
+	COST21 FLOAT DEFAULT 0.0,
+	COST22 FLOAT DEFAULT 0.0,
+	COST23 FLOAT DEFAULT 0.0,
+	COST24 FLOAT DEFAULT 0.0,
+	COST25 FLOAT DEFAULT 0.0,
+	COST26 FLOAT DEFAULT 0.0,
+	COST27 FLOAT DEFAULT 0.0,
+	COST28 FLOAT DEFAULT 0.0,
+	COST29 FLOAT DEFAULT 0.0,
+	COST30 FLOAT DEFAULT 0.0,
+	COST31 FLOAT DEFAULT 0.0,
+	COST32 FLOAT DEFAULT 0.0,
+	COST33 FLOAT DEFAULT 0.0,
+	COST34 FLOAT DEFAULT 0.0,
+	COST35 FLOAT DEFAULT 0.0,
+	COST36 FLOAT DEFAULT 0.0,
+	COST37 FLOAT DEFAULT 0.0,
+	COST38 FLOAT DEFAULT 0.0,
+	COST39 FLOAT DEFAULT 0.0,
+	COST40 FLOAT DEFAULT 0.0,
+	COST41 FLOAT DEFAULT 0.0,
+	COST42 FLOAT DEFAULT 0.0,
+	COST43 FLOAT DEFAULT 0.0,
+	COST44 FLOAT DEFAULT 0.0,
+	COST45 FLOAT DEFAULT 0.0,
+	COST46 FLOAT DEFAULT 0.0,
+	COST47 FLOAT DEFAULT 0.0,
+	COST48 FLOAT DEFAULT 0.0,
+	COST49 FLOAT DEFAULT 0.0,
+	COST50 FLOAT DEFAULT 0.0,
+	COST51 FLOAT DEFAULT 0.0,
+	COST52 FLOAT DEFAULT 0.0,
+	COST53 FLOAT DEFAULT 0.0,
+	COST54 FLOAT DEFAULT 0.0,
+	COST55 FLOAT DEFAULT 0.0,
+	COST56 FLOAT DEFAULT 0.0,
+	COST57 FLOAT DEFAULT 0.0,
+	COST58 FLOAT DEFAULT 0.0,
+	COST59 FLOAT DEFAULT 0.0,
+	COST60 FLOAT DEFAULT 0.0,
+	AMOUNT00 FLOAT DEFAULT 0.0,
+	AMOUNT01 FLOAT DEFAULT 0.0,
+	AMOUNT02 FLOAT DEFAULT 0.0,
+	AMOUNT03 FLOAT DEFAULT 0.0,
+	AMOUNT04 FLOAT DEFAULT 0.0,
+	AMOUNT05 FLOAT DEFAULT 0.0,
+	AMOUNT06 FLOAT DEFAULT 0.0,
+	AMOUNT07 FLOAT DEFAULT 0.0,
+	AMOUNT08 FLOAT DEFAULT 0.0,
+	AMOUNT09 FLOAT DEFAULT 0.0,
+	AMOUNT10 FLOAT DEFAULT 0.0,
+	AMOUNT11 FLOAT DEFAULT 0.0,
+	AMOUNT12 FLOAT DEFAULT 0.0,
+	AMOUNT13 FLOAT DEFAULT 0.0,
+	AMOUNT14 FLOAT DEFAULT 0.0,
+	AMOUNT15 FLOAT DEFAULT 0.0,
+	AMOUNT16 FLOAT DEFAULT 0.0,
+	AMOUNT17 FLOAT DEFAULT 0.0,
+	AMOUNT18 FLOAT DEFAULT 0.0,
+	AMOUNT19 FLOAT DEFAULT 0.0,
+	AMOUNT20 FLOAT DEFAULT 0.0,
+	AMOUNT21 FLOAT DEFAULT 0.0,
+	AMOUNT22 FLOAT DEFAULT 0.0,
+	AMOUNT23 FLOAT DEFAULT 0.0,
+	AMOUNT24 FLOAT DEFAULT 0.0,
+	AMOUNT25 FLOAT DEFAULT 0.0,
+	AMOUNT26 FLOAT DEFAULT 0.0,
+	AMOUNT27 FLOAT DEFAULT 0.0,
+	AMOUNT28 FLOAT DEFAULT 0.0,
+	AMOUNT29 FLOAT DEFAULT 0.0,
+	AMOUNT30 FLOAT DEFAULT 0.0,
+	AMOUNT31 FLOAT DEFAULT 0.0,
+	AMOUNT32 FLOAT DEFAULT 0.0,
+	AMOUNT33 FLOAT DEFAULT 0.0,
+	AMOUNT34 FLOAT DEFAULT 0.0,
+	AMOUNT35 FLOAT DEFAULT 0.0,
+	AMOUNT36 FLOAT DEFAULT 0.0,
+	AMOUNT37 FLOAT DEFAULT 0.0,
+	AMOUNT38 FLOAT DEFAULT 0.0,
+	AMOUNT39 FLOAT DEFAULT 0.0,
+	AMOUNT40 FLOAT DEFAULT 0.0,
+	AMOUNT41 FLOAT DEFAULT 0.0,
+	AMOUNT42 FLOAT DEFAULT 0.0,
+	AMOUNT43 FLOAT DEFAULT 0.0,
+	AMOUNT44 FLOAT DEFAULT 0.0,
+	AMOUNT45 FLOAT DEFAULT 0.0,
+	AMOUNT46 FLOAT DEFAULT 0.0,
+	AMOUNT47 FLOAT DEFAULT 0.0,
+	AMOUNT48 FLOAT DEFAULT 0.0,
+	AMOUNT49 FLOAT DEFAULT 0.0,
+	AMOUNT50 FLOAT DEFAULT 0.0,
+	AMOUNT51 FLOAT DEFAULT 0.0,
+	AMOUNT52 FLOAT DEFAULT 0.0,
+	AMOUNT53 FLOAT DEFAULT 0.0,
+	AMOUNT54 FLOAT DEFAULT 0.0,
+	AMOUNT55 FLOAT DEFAULT 0.0,
+	AMOUNT56 FLOAT DEFAULT 0.0,
+	AMOUNT57 FLOAT DEFAULT 0.0,
+	AMOUNT58 FLOAT DEFAULT 0.0,
+	AMOUNT59 FLOAT DEFAULT 0.0,
+	AMOUNT60 FLOAT NULL 
+PRIMARY KEY(RowOrder)
+);
+
+CREATE  INDEX IDX_LOTPERIOD ON BCLOTMASTERPERIOD(ITEMCODE,WHCode,LOTNUMBER);
+CREATE  INDEX IDX_LOTPERIOD2 ON BCLOTMASTERPERIOD(ITEMCODE);
+
+CREATE TABLE BCSTKLocationPeriod 
+(
+	ROWORDER int NOT NULL IDENTITY (0, 1),
+	ITEMCODE varchar (25),
+	WHCODE varchar (10),
+	SHELFCODE varchar (10),
+	UNITCODE varchar (10),
+	MOVEMENTLASTINDATE datetime,
+	MOVEMENTLASTINTYPE int,
+	MOVEMENTLASTOUTDATE datetime,
+	MOVEMENTLASTOUTTYPE int,
+	MOVEMENTLASTSALEDATE datetime,
+	MOVEMENTLASTBUYDATE datetime,
+	ISTRANS00 smallint DEFAULT 0,
+	ISTRANS01 smallint DEFAULT 0,
+	ISTRANS02 smallint DEFAULT 0,
+	ISTRANS03 smallint DEFAULT 0,
+	ISTRANS04 smallint DEFAULT 0,
+	ISTRANS05 smallint DEFAULT 0,
+	ISTRANS06 smallint DEFAULT 0,
+	ISTRANS07 smallint DEFAULT 0,
+	ISTRANS08 smallint DEFAULT 0,
+	ISTRANS09 smallint DEFAULT 0,
+	ISTRANS10 smallint DEFAULT 0,
+	ISTRANS11 smallint DEFAULT 0,
+	ISTRANS12 smallint DEFAULT 0,
+	ISTRANS13 smallint DEFAULT 0,
+	ISTRANS14 smallint DEFAULT 0,
+	ISTRANS15 smallint DEFAULT 0,
+	ISTRANS16 smallint DEFAULT 0,
+	ISTRANS17 smallint DEFAULT 0,
+	ISTRANS18 smallint DEFAULT 0,
+	ISTRANS19 smallint DEFAULT 0,
+	ISTRANS20 smallint DEFAULT 0,
+	ISTRANS21 smallint DEFAULT 0,
+	ISTRANS22 smallint DEFAULT 0,
+	ISTRANS23 smallint DEFAULT 0,
+	ISTRANS24 smallint DEFAULT 0,
+	ISTRANS25 smallint DEFAULT 0,
+	ISTRANS26 smallint DEFAULT 0,
+	ISTRANS27 smallint DEFAULT 0,
+	ISTRANS28 smallint DEFAULT 0,
+	ISTRANS29 smallint DEFAULT 0,
+	ISTRANS30 smallint DEFAULT 0,
+	ISTRANS31 smallint DEFAULT 0,
+	ISTRANS32 smallint DEFAULT 0,
+	ISTRANS33 smallint DEFAULT 0,
+	ISTRANS34 smallint DEFAULT 0,
+	ISTRANS35 smallint DEFAULT 0,
+	ISTRANS36 smallint DEFAULT 0,
+	ISTRANS37 smallint DEFAULT 0,
+	ISTRANS38 smallint DEFAULT 0,
+	ISTRANS39 smallint DEFAULT 0,
+	ISTRANS40 smallint DEFAULT 0,
+	ISTRANS41 smallint DEFAULT 0,
+	ISTRANS42 smallint DEFAULT 0,
+	ISTRANS43 smallint DEFAULT 0,
+	ISTRANS44 smallint DEFAULT 0,
+	ISTRANS45 smallint DEFAULT 0,
+	ISTRANS46 smallint DEFAULT 0,
+	ISTRANS47 smallint DEFAULT 0,
+	ISTRANS48 smallint DEFAULT 0,
+	ISTRANS49 smallint DEFAULT 0,
+	ISTRANS50 smallint DEFAULT 0,
+	ISTRANS51 smallint DEFAULT 0,
+	ISTRANS52 smallint DEFAULT 0,
+	ISTRANS53 smallint DEFAULT 0,
+	ISTRANS54 smallint DEFAULT 0,
+	ISTRANS55 smallint DEFAULT 0,
+	ISTRANS56 smallint DEFAULT 0,
+	ISTRANS57 smallint DEFAULT 0,
+	ISTRANS58 smallint DEFAULT 0,
+	ISTRANS59 smallint DEFAULT 0,
+	ISTRANS60 smallint DEFAULT 0,
+	QTY00 FLOAT DEFAULT 0.0,
+	QTY01 FLOAT DEFAULT 0.0,
+	QTY02 FLOAT DEFAULT 0.0,
+	QTY03 FLOAT DEFAULT 0.0,
+	QTY04 FLOAT DEFAULT 0.0,
+	QTY05 FLOAT DEFAULT 0.0,
+	QTY06 FLOAT DEFAULT 0.0,
+	QTY07 FLOAT DEFAULT 0.0,
+	QTY08 FLOAT DEFAULT 0.0,
+	QTY09 FLOAT DEFAULT 0.0,
+	QTY10 FLOAT DEFAULT 0.0,
+	QTY11 FLOAT DEFAULT 0.0,
+	QTY12 FLOAT DEFAULT 0.0,
+	QTY13 FLOAT DEFAULT 0.0,
+	QTY14 FLOAT DEFAULT 0.0,
+	QTY15 FLOAT DEFAULT 0.0,
+	QTY16 FLOAT DEFAULT 0.0,
+	QTY17 FLOAT DEFAULT 0.0,
+	QTY18 FLOAT DEFAULT 0.0,
+	QTY19 FLOAT DEFAULT 0.0,
+	QTY20 FLOAT DEFAULT 0.0,
+	QTY21 FLOAT DEFAULT 0.0,
+	QTY22 FLOAT DEFAULT 0.0,
+	QTY23 FLOAT DEFAULT 0.0,
+	QTY24 FLOAT DEFAULT 0.0,
+	QTY25 FLOAT DEFAULT 0.0,
+	QTY26 FLOAT DEFAULT 0.0,
+	QTY27 FLOAT DEFAULT 0.0,
+	QTY28 FLOAT DEFAULT 0.0,
+	QTY29 FLOAT DEFAULT 0.0,
+	QTY30 FLOAT DEFAULT 0.0,
+	QTY31 FLOAT DEFAULT 0.0,
+	QTY32 FLOAT DEFAULT 0.0,
+	QTY33 FLOAT DEFAULT 0.0,
+	QTY34 FLOAT DEFAULT 0.0,
+	QTY35 FLOAT DEFAULT 0.0,
+	QTY36 FLOAT DEFAULT 0.0,
+	QTY37 FLOAT DEFAULT 0.0,
+	QTY38 FLOAT DEFAULT 0.0,
+	QTY39 FLOAT DEFAULT 0.0,
+	QTY40 FLOAT DEFAULT 0.0,
+	QTY41 FLOAT DEFAULT 0.0,
+	QTY42 FLOAT DEFAULT 0.0,
+	QTY43 FLOAT DEFAULT 0.0,
+	QTY44 FLOAT DEFAULT 0.0,
+	QTY45 FLOAT DEFAULT 0.0,
+	QTY46 FLOAT DEFAULT 0.0,
+	QTY47 FLOAT DEFAULT 0.0,
+	QTY48 FLOAT DEFAULT 0.0,
+	QTY49 FLOAT DEFAULT 0.0,
+	QTY50 FLOAT DEFAULT 0.0,
+	QTY51 FLOAT DEFAULT 0.0,
+	QTY52 FLOAT DEFAULT 0.0,
+	QTY53 FLOAT DEFAULT 0.0,
+	QTY54 FLOAT DEFAULT 0.0,
+	QTY55 FLOAT DEFAULT 0.0,
+	QTY56 FLOAT DEFAULT 0.0,
+	QTY57 FLOAT DEFAULT 0.0,
+	QTY58 FLOAT DEFAULT 0.0,
+	QTY59 FLOAT DEFAULT 0.0,
+	QTY60 FLOAT NULL 
+PRIMARY KEY(RowOrder)
+);
+
+CREATE  INDEX IDX_LOCATESTKPERIOD ON BCSTKLocationPeriod(ITEMCODE,WHCODE,SHELFCODE); 
+CREATE  INDEX IDX_LOCATESTKPERIOD2 ON BCSTKLocationPeriod(ITEMCODE); 
+
+
+CREATE TABLE BCSTKWAREHOUSEPeriod
+(
+	ROWORDER int NOT NULL IDENTITY (0, 1),
+	ITEMCODE varchar (25),
+	WHID int,
+	WHCODE varchar (10),
+	UNITCODE varchar (10),
+	MOVEMENTLASTINDATE datetime,
+	MOVEMENTLASTINTYPE int,
+	MOVEMENTLASTOUTDATE datetime,
+	MOVEMENTLASTOUTTYPE int,
+	MOVEMENTLASTSALEDATE datetime,
+	MOVEMENTLASTBUYDATE datetime,
+	ISTRANS00 smallint DEFAULT 0,
+	ISTRANS01 smallint DEFAULT 0,
+	ISTRANS02 smallint DEFAULT 0,
+	ISTRANS03 smallint DEFAULT 0,
+	ISTRANS04 smallint DEFAULT 0,
+	ISTRANS05 smallint DEFAULT 0,
+	ISTRANS06 smallint DEFAULT 0,
+	ISTRANS07 smallint DEFAULT 0,
+	ISTRANS08 smallint DEFAULT 0,
+	ISTRANS09 smallint DEFAULT 0,
+	ISTRANS10 smallint DEFAULT 0,
+	ISTRANS11 smallint DEFAULT 0,
+	ISTRANS12 smallint DEFAULT 0,
+	ISTRANS13 smallint DEFAULT 0,
+	ISTRANS14 smallint DEFAULT 0,
+	ISTRANS15 smallint DEFAULT 0,
+	ISTRANS16 smallint DEFAULT 0,
+	ISTRANS17 smallint DEFAULT 0,
+	ISTRANS18 smallint DEFAULT 0,
+	ISTRANS19 smallint DEFAULT 0,
+	ISTRANS20 smallint DEFAULT 0,
+	ISTRANS21 smallint DEFAULT 0,
+	ISTRANS22 smallint DEFAULT 0,
+	ISTRANS23 smallint DEFAULT 0,
+	ISTRANS24 smallint DEFAULT 0,
+	ISTRANS25 smallint DEFAULT 0,
+	ISTRANS26 smallint DEFAULT 0,
+	ISTRANS27 smallint DEFAULT 0,
+	ISTRANS28 smallint DEFAULT 0,
+	ISTRANS29 smallint DEFAULT 0,
+	ISTRANS30 smallint DEFAULT 0,
+	ISTRANS31 smallint DEFAULT 0,
+	ISTRANS32 smallint DEFAULT 0,
+	ISTRANS33 smallint DEFAULT 0,
+	ISTRANS34 smallint DEFAULT 0,
+	ISTRANS35 smallint DEFAULT 0,
+	ISTRANS36 smallint DEFAULT 0,
+	ISTRANS37 smallint DEFAULT 0,
+	ISTRANS38 smallint DEFAULT 0,
+	ISTRANS39 smallint DEFAULT 0,
+	ISTRANS40 smallint DEFAULT 0,
+	ISTRANS41 smallint DEFAULT 0,
+	ISTRANS42 smallint DEFAULT 0,
+	ISTRANS43 smallint DEFAULT 0,
+	ISTRANS44 smallint DEFAULT 0,
+	ISTRANS45 smallint DEFAULT 0,
+	ISTRANS46 smallint DEFAULT 0,
+	ISTRANS47 smallint DEFAULT 0,
+	ISTRANS48 smallint DEFAULT 0,
+	ISTRANS49 smallint DEFAULT 0,
+	ISTRANS50 smallint DEFAULT 0,
+	ISTRANS51 smallint DEFAULT 0,
+	ISTRANS52 smallint DEFAULT 0,
+	ISTRANS53 smallint DEFAULT 0,
+	ISTRANS54 smallint DEFAULT 0,
+	ISTRANS55 smallint DEFAULT 0,
+	ISTRANS56 smallint DEFAULT 0,
+	ISTRANS57 smallint DEFAULT 0,
+	ISTRANS58 smallint DEFAULT 0,
+	ISTRANS59 smallint DEFAULT 0,
+	ISTRANS60 smallint DEFAULT 0,
+	QTY00 FLOAT DEFAULT 0.0,
+	QTY01 FLOAT DEFAULT 0.0,
+	QTY02 FLOAT DEFAULT 0.0,
+	QTY03 FLOAT DEFAULT 0.0,
+	QTY04 FLOAT DEFAULT 0.0,
+	QTY05 FLOAT DEFAULT 0.0,
+	QTY06 FLOAT DEFAULT 0.0,
+	QTY07 FLOAT DEFAULT 0.0,
+	QTY08 FLOAT DEFAULT 0.0,
+	QTY09 FLOAT DEFAULT 0.0,
+	QTY10 FLOAT DEFAULT 0.0,
+	QTY11 FLOAT DEFAULT 0.0,
+	QTY12 FLOAT DEFAULT 0.0,
+	QTY13 FLOAT DEFAULT 0.0,
+	QTY14 FLOAT DEFAULT 0.0,
+	QTY15 FLOAT DEFAULT 0.0,
+	QTY16 FLOAT DEFAULT 0.0,
+	QTY17 FLOAT DEFAULT 0.0,
+	QTY18 FLOAT DEFAULT 0.0,
+	QTY19 FLOAT DEFAULT 0.0,
+	QTY20 FLOAT DEFAULT 0.0,
+	QTY21 FLOAT DEFAULT 0.0,
+	QTY22 FLOAT DEFAULT 0.0,
+	QTY23 FLOAT DEFAULT 0.0,
+	QTY24 FLOAT DEFAULT 0.0,
+	QTY25 FLOAT DEFAULT 0.0,
+	QTY26 FLOAT DEFAULT 0.0,
+	QTY27 FLOAT DEFAULT 0.0,
+	QTY28 FLOAT DEFAULT 0.0,
+	QTY29 FLOAT DEFAULT 0.0,
+	QTY30 FLOAT DEFAULT 0.0,
+	QTY31 FLOAT DEFAULT 0.0,
+	QTY32 FLOAT DEFAULT 0.0,
+	QTY33 FLOAT DEFAULT 0.0,
+	QTY34 FLOAT DEFAULT 0.0,
+	QTY35 FLOAT DEFAULT 0.0,
+	QTY36 FLOAT DEFAULT 0.0,
+	QTY37 FLOAT DEFAULT 0.0,
+	QTY38 FLOAT DEFAULT 0.0,
+	QTY39 FLOAT DEFAULT 0.0,
+	QTY40 FLOAT DEFAULT 0.0,
+	QTY41 FLOAT DEFAULT 0.0,
+	QTY42 FLOAT DEFAULT 0.0,
+	QTY43 FLOAT DEFAULT 0.0,
+	QTY44 FLOAT DEFAULT 0.0,
+	QTY45 FLOAT DEFAULT 0.0,
+	QTY46 FLOAT DEFAULT 0.0,
+	QTY47 FLOAT DEFAULT 0.0,
+	QTY48 FLOAT DEFAULT 0.0,
+	QTY49 FLOAT DEFAULT 0.0,
+	QTY50 FLOAT DEFAULT 0.0,
+	QTY51 FLOAT DEFAULT 0.0,
+	QTY52 FLOAT DEFAULT 0.0,
+	QTY53 FLOAT DEFAULT 0.0,
+	QTY54 FLOAT DEFAULT 0.0,
+	QTY55 FLOAT DEFAULT 0.0,
+	QTY56 FLOAT DEFAULT 0.0,
+	QTY57 FLOAT DEFAULT 0.0,
+	QTY58 FLOAT DEFAULT 0.0,
+	QTY59 FLOAT DEFAULT 0.0,
+	QTY60 FLOAT DEFAULT 0.0,
+	AVERAGECOST00 FLOAT DEFAULT 0.0,
+	AVERAGECOST01 FLOAT DEFAULT 0.0,
+	AVERAGECOST02 FLOAT DEFAULT 0.0,
+	AVERAGECOST03 FLOAT DEFAULT 0.0,
+	AVERAGECOST04 FLOAT DEFAULT 0.0,
+	AVERAGECOST05 FLOAT DEFAULT 0.0,
+	AVERAGECOST06 FLOAT DEFAULT 0.0,
+	AVERAGECOST07 FLOAT DEFAULT 0.0,
+	AVERAGECOST08 FLOAT DEFAULT 0.0,
+	AVERAGECOST09 FLOAT DEFAULT 0.0,
+	AVERAGECOST10 FLOAT DEFAULT 0.0,
+	AVERAGECOST11 FLOAT DEFAULT 0.0,
+	AVERAGECOST12 FLOAT DEFAULT 0.0,
+	AVERAGECOST13 FLOAT DEFAULT 0.0,
+	AVERAGECOST14 FLOAT DEFAULT 0.0,
+	AVERAGECOST15 FLOAT DEFAULT 0.0,
+	AVERAGECOST16 FLOAT DEFAULT 0.0,
+	AVERAGECOST17 FLOAT DEFAULT 0.0,
+	AVERAGECOST18 FLOAT DEFAULT 0.0,
+	AVERAGECOST19 FLOAT DEFAULT 0.0,
+	AVERAGECOST20 FLOAT DEFAULT 0.0,
+	AVERAGECOST21 FLOAT DEFAULT 0.0,
+	AVERAGECOST22 FLOAT DEFAULT 0.0,
+	AVERAGECOST23 FLOAT DEFAULT 0.0,
+	AVERAGECOST24 FLOAT DEFAULT 0.0,
+	AVERAGECOST25 FLOAT DEFAULT 0.0,
+	AVERAGECOST26 FLOAT DEFAULT 0.0,
+	AVERAGECOST27 FLOAT DEFAULT 0.0,
+	AVERAGECOST28 FLOAT DEFAULT 0.0,
+	AVERAGECOST29 FLOAT DEFAULT 0.0,
+	AVERAGECOST30 FLOAT DEFAULT 0.0,
+	AVERAGECOST31 FLOAT DEFAULT 0.0,
+	AVERAGECOST32 FLOAT DEFAULT 0.0,
+	AVERAGECOST33 FLOAT DEFAULT 0.0,
+	AVERAGECOST34 FLOAT DEFAULT 0.0,
+	AVERAGECOST35 FLOAT DEFAULT 0.0,
+	AVERAGECOST36 FLOAT DEFAULT 0.0,
+	AVERAGECOST37 FLOAT DEFAULT 0.0,
+	AVERAGECOST38 FLOAT DEFAULT 0.0,
+	AVERAGECOST39 FLOAT DEFAULT 0.0,
+	AVERAGECOST40 FLOAT DEFAULT 0.0,
+	AVERAGECOST41 FLOAT DEFAULT 0.0,
+	AVERAGECOST42 FLOAT DEFAULT 0.0,
+	AVERAGECOST43 FLOAT DEFAULT 0.0,
+	AVERAGECOST44 FLOAT DEFAULT 0.0,
+	AVERAGECOST45 FLOAT DEFAULT 0.0,
+	AVERAGECOST46 FLOAT DEFAULT 0.0,
+	AVERAGECOST47 FLOAT DEFAULT 0.0,
+	AVERAGECOST48 FLOAT DEFAULT 0.0,
+	AVERAGECOST49 FLOAT DEFAULT 0.0,
+	AVERAGECOST50 FLOAT DEFAULT 0.0,
+	AVERAGECOST51 FLOAT DEFAULT 0.0,
+	AVERAGECOST52 FLOAT DEFAULT 0.0,
+	AVERAGECOST53 FLOAT DEFAULT 0.0,
+	AVERAGECOST54 FLOAT DEFAULT 0.0,
+	AVERAGECOST55 FLOAT DEFAULT 0.0,
+	AVERAGECOST56 FLOAT DEFAULT 0.0,
+	AVERAGECOST57 FLOAT DEFAULT 0.0,
+	AVERAGECOST58 FLOAT DEFAULT 0.0,
+	AVERAGECOST59 FLOAT DEFAULT 0.0,
+	AVERAGECOST60 FLOAT DEFAULT 0.0,
+	AMOUNT00 FLOAT DEFAULT 0.0,
+	AMOUNT01 FLOAT DEFAULT 0.0,
+	AMOUNT02 FLOAT DEFAULT 0.0,
+	AMOUNT03 FLOAT DEFAULT 0.0,
+	AMOUNT04 FLOAT DEFAULT 0.0,
+	AMOUNT05 FLOAT DEFAULT 0.0,
+	AMOUNT06 FLOAT DEFAULT 0.0,
+	AMOUNT07 FLOAT DEFAULT 0.0,
+	AMOUNT08 FLOAT DEFAULT 0.0,
+	AMOUNT09 FLOAT DEFAULT 0.0,
+	AMOUNT10 FLOAT DEFAULT 0.0,
+	AMOUNT11 FLOAT DEFAULT 0.0,
+	AMOUNT12 FLOAT DEFAULT 0.0,
+	AMOUNT13 FLOAT DEFAULT 0.0,
+	AMOUNT14 FLOAT DEFAULT 0.0,
+	AMOUNT15 FLOAT DEFAULT 0.0,
+	AMOUNT16 FLOAT DEFAULT 0.0,
+	AMOUNT17 FLOAT DEFAULT 0.0,
+	AMOUNT18 FLOAT DEFAULT 0.0,
+	AMOUNT19 FLOAT DEFAULT 0.0,
+	AMOUNT20 FLOAT DEFAULT 0.0,
+	AMOUNT21 FLOAT DEFAULT 0.0,
+	AMOUNT22 FLOAT DEFAULT 0.0,
+	AMOUNT23 FLOAT DEFAULT 0.0,
+	AMOUNT24 FLOAT DEFAULT 0.0,
+	AMOUNT25 FLOAT DEFAULT 0.0,
+	AMOUNT26 FLOAT DEFAULT 0.0,
+	AMOUNT27 FLOAT DEFAULT 0.0,
+	AMOUNT28 FLOAT DEFAULT 0.0,
+	AMOUNT29 FLOAT DEFAULT 0.0,
+	AMOUNT30 FLOAT DEFAULT 0.0,
+	AMOUNT31 FLOAT DEFAULT 0.0,
+	AMOUNT32 FLOAT DEFAULT 0.0,
+	AMOUNT33 FLOAT DEFAULT 0.0,
+	AMOUNT34 FLOAT DEFAULT 0.0,
+	AMOUNT35 FLOAT DEFAULT 0.0,
+	AMOUNT36 FLOAT DEFAULT 0.0,
+	AMOUNT37 FLOAT DEFAULT 0.0,
+	AMOUNT38 FLOAT DEFAULT 0.0,
+	AMOUNT39 FLOAT DEFAULT 0.0,
+	AMOUNT40 FLOAT DEFAULT 0.0,
+	AMOUNT41 FLOAT DEFAULT 0.0,
+	AMOUNT42 FLOAT DEFAULT 0.0,
+	AMOUNT43 FLOAT DEFAULT 0.0,
+	AMOUNT44 FLOAT DEFAULT 0.0,
+	AMOUNT45 FLOAT DEFAULT 0.0,
+	AMOUNT46 FLOAT DEFAULT 0.0,
+	AMOUNT47 FLOAT DEFAULT 0.0,
+	AMOUNT48 FLOAT DEFAULT 0.0,
+	AMOUNT49 FLOAT DEFAULT 0.0,
+	AMOUNT50 FLOAT DEFAULT 0.0,
+	AMOUNT51 FLOAT DEFAULT 0.0,
+	AMOUNT52 FLOAT DEFAULT 0.0,
+	AMOUNT53 FLOAT DEFAULT 0.0,
+	AMOUNT54 FLOAT DEFAULT 0.0,
+	AMOUNT55 FLOAT DEFAULT 0.0,
+	AMOUNT56 FLOAT DEFAULT 0.0,
+	AMOUNT57 FLOAT DEFAULT 0.0,
+	AMOUNT58 FLOAT DEFAULT 0.0,
+	AMOUNT59 FLOAT DEFAULT 0.0,
+	AMOUNT60 FLOAT DEFAULT 0.0,
+	LOTNUMBER00 smallint DEFAULT 0,
+	LOTNUMBER01 smallint DEFAULT 0,
+	LOTNUMBER02 smallint DEFAULT 0,
+	LOTNUMBER03 smallint DEFAULT 0,
+	LOTNUMBER04 smallint DEFAULT 0,
+	LOTNUMBER05 smallint DEFAULT 0,
+	LOTNUMBER06 smallint DEFAULT 0,
+	LOTNUMBER07 smallint DEFAULT 0,
+	LOTNUMBER08 smallint DEFAULT 0,
+	LOTNUMBER09 smallint DEFAULT 0,
+	LOTNUMBER10 smallint DEFAULT 0,
+	LOTNUMBER11 smallint DEFAULT 0,
+	LOTNUMBER12 smallint DEFAULT 0,
+	LOTNUMBER13 smallint DEFAULT 0,
+	LOTNUMBER14 smallint DEFAULT 0,
+	LOTNUMBER15 smallint DEFAULT 0,
+	LOTNUMBER16 smallint DEFAULT 0,
+	LOTNUMBER17 smallint DEFAULT 0,
+	LOTNUMBER18 smallint DEFAULT 0,
+	LOTNUMBER19 smallint DEFAULT 0,
+	LOTNUMBER20 smallint DEFAULT 0,
+	LOTNUMBER21 smallint DEFAULT 0,
+	LOTNUMBER22 smallint DEFAULT 0,
+	LOTNUMBER23 smallint DEFAULT 0,
+	LOTNUMBER24 smallint DEFAULT 0,
+	LOTNUMBER25 smallint DEFAULT 0,
+	LOTNUMBER26 smallint DEFAULT 0,
+	LOTNUMBER27 smallint DEFAULT 0,
+	LOTNUMBER28 smallint DEFAULT 0,
+	LOTNUMBER29 smallint DEFAULT 0,
+	LOTNUMBER30 smallint DEFAULT 0,
+	LOTNUMBER31 smallint DEFAULT 0,
+	LOTNUMBER32 smallint DEFAULT 0,
+	LOTNUMBER33 smallint DEFAULT 0,
+	LOTNUMBER34 smallint DEFAULT 0,
+	LOTNUMBER35 smallint DEFAULT 0,
+	LOTNUMBER36 smallint DEFAULT 0,
+	LOTNUMBER37 smallint DEFAULT 0,
+	LOTNUMBER38 smallint DEFAULT 0,
+	LOTNUMBER39 smallint DEFAULT 0,
+	LOTNUMBER40 smallint DEFAULT 0,
+	LOTNUMBER41 smallint DEFAULT 0,
+	LOTNUMBER42 smallint DEFAULT 0,
+	LOTNUMBER43 smallint DEFAULT 0,
+	LOTNUMBER44 smallint DEFAULT 0,
+	LOTNUMBER45 smallint DEFAULT 0,
+	LOTNUMBER46 smallint DEFAULT 0,
+	LOTNUMBER47 smallint DEFAULT 0,
+	LOTNUMBER48 smallint DEFAULT 0,
+	LOTNUMBER49 smallint DEFAULT 0,
+	LOTNUMBER50 smallint DEFAULT 0,
+	LOTNUMBER51 smallint DEFAULT 0,
+	LOTNUMBER52 smallint DEFAULT 0,
+	LOTNUMBER53 smallint DEFAULT 0,
+	LOTNUMBER54 smallint DEFAULT 0,
+	LOTNUMBER55 smallint DEFAULT 0,
+	LOTNUMBER56 smallint DEFAULT 0,
+	LOTNUMBER57 smallint DEFAULT 0,
+	LOTNUMBER58 smallint DEFAULT 0,
+	LOTNUMBER59 smallint DEFAULT 0,
+	LOTNUMBER60 smallint NULL 
+PRIMARY KEY(RowOrder)
+);
+
+CREATE  INDEX IDX_WHSTKPERIOD1 ON BCSTKWAREHOUSEPeriod(ITEMCODE);
+CREATE  INDEX IDX_WHSTKPERIOD2 ON BCSTKWAREHOUSEPeriod(ITEMCODE,WHID);
+CREATE  INDEX IDX_WHSTKPERIOD3 ON BCSTKWAREHOUSEPeriod(ITEMCODE,WHCODE);
+CREATE  INDEX IDX_WHSTKPERIOD4 ON BCSTKWAREHOUSEPeriod(ITEMCODE,WHID,WHCODE);
+
+Create table BCGLPostque
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Docdate DateTime,
+	Docno Varchar(35) NOT NULL,
+	Source 	smallint NOT NULL,
+	GLGroup smallint DEFAULT 0,
+	CreateDateTime	DATETIME
+	PRIMARY KEY(Docno,Source)
+);
+
+----- MERIDIAN
+create table BCPackingList
+(
+ ROWORDER INT NOT NULL IDENTITY(0,1),
+ DocNo  VARCHAR(20),
+ LineNumber SMALLINT DEFAULT 0,
+ Item   VARCHAR(1000),
+ Descriptions VARCHAR(1000), 
+ Quantity FLOAT,
+ NetWeight FLOAT,
+ GrossWeight FLOAT
+    PRIMARY KEY(ROWORDER)
+);
+
+
+--for evs project
+create table BCStandardPrice
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCInvoiceType
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+------------------ Tohome Moditfy -------------------
+create table BCReceiptSpecial
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransCode	VARCHAR(10) NOT NULL,  --รหัสขนส่ง
+	MethodePaybill	VARCHAR(10) NOT NULL, --วิธีการชำระเงิน
+	MethodePaybill2	VARCHAR(1000) NOT NULL, --วิธีการชำระเงิน 2
+	DescDebt	VARCHAR(1000) NOT NULL, --หมายเหตุการับชำระ
+	Other1	VARCHAR(1000) NOT NULL, --อื่นๆ 1
+	Other2	VARCHAR(1000) NOT NULL, --อื่นๆ 2
+	Earnest	VARCHAR(1000) NOT NULL, --ดอกเบี้ย
+	Interest	VARCHAR(1000) NOT NULL, --เงินดาวน์
+	Instalment	VARCHAR(1000) NOT NULL --งวด
+    PRIMARY KEY(ROWORDER)
+);
+
+create table BCReceiptMultiAr -- รับเงินอัตโนมัติ หลายลูกค้า
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35) NOT NULL,
+	DocDate	DATETIME,
+	TaxNo	VARCHAR(35),
+	StartArCode	VARCHAR(20),
+	StopArCode	VARCHAR(20),
+	RefNo	VARCHAR(35),	
+	DocType SMALLINT DEFAULT 0,  -- 0 = ตามรายการเดิม ....  จนถึง 7  , เพิ่มเงื่อนไข 8 รับเงินล่วงหน้าไม่คิดภาษี(tohome)
+	SaleCode	VARCHAR(10),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumCreditAmount	FLOAT DEFAULT 0.0,
+	ChargeAmount	FLOAT DEFAULT 0.0, -- ยอด Charge บัตรเครดิต
+	ChangeAmount FLOAT DEFAULT 0.0, -- ยอดเงินทอน เฉพาะเงินสด
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(35),
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ 
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดลูกหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	DebtLimitReturn FLOAT DEFAULT 0.0, -- ยอดทีคืนวงเงิน Default = SumHomeAmount1
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	IsConfirm	SMALLINT DEFAULT 0,
+	PayServiceOnly SMALLINT DEFAULT 0, -- 1=รับชำระค่าบริการอย่างเดียว (อ้างได้เฉพาะ  type=3)
+	PrintItemOfBill SMALLINT DEFAULT 0, -- 1=พิมพ์ใบเสร็จเหมือนใบส่งของ
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PayType SMALLINT DEFAULT 0 -- 0 = เงินสด, 1 = เช็ค , 2= เงินโอน, 3 = บัตรเครดิต
+    PRIMARY KEY(DocNo)
+);
+CREATE  INDEX IDX_REP_MULTI_DOCNO ON BCReceiptMultiAr(DocNo);
+CREATE  INDEX IDX_REP_MULTI_DOCDATE ON BCReceiptMultiAr(DocDate);
+
+			
+create table BCRecMultiArSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(35),
+	DocDate	DATETIME,
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(35),
+	ReceiptNo	VARCHAR(35), -- สร้างเลขที่เอกสารรับชำระอัตโนมัติ  = DocNo/ArCode
+	InvBalance	FLOAT DEFAULT 0.0,
+	MethodePaybill VARCHAR(10),
+	PayAmount	FLOAT DEFAULT 0.0,
+	DebtLimitReturn FLOAT DEFAULT 0.0, -- ยอดทีคืนวงเงิน Default = SumHomeAmount1
+	DebtLimitRetDesc VARCHAR(1000), -- หมายเหตุการคืนวงเงิน
+	MyDescription	VARCHAR(255),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0,  -- 0=ใบส่งของ 1=เอกสารยกมา 2=ใบลดหนี้ 3=ใบเพิ่มหนี้ 4=ลูกหนี้อื่นๆ
+	RefNo	VARCHAR(35),
+	RefType	SMALLINT DEFAULT 0, -- 0=ใบวางบิล 1=ใบเสร็จชั่วคราว
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0,  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+	PayType SMALLINT DEFAULT 0 -- 0 = เงินสด, 1 = เช็ค , 2= เงินโอน, 3 = บัตรเครดิต
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_REPSMULTI1_NO ON BCRecMultiArSub(DocNo);
+CREATE  INDEX IDX_REPSMULTI1_DATE ON BCRecMultiArSub(DocDate);
+CREATE  INDEX IDX_REPSMULTI1_AR ON BCRecMultiArSub(ArCode);
+CREATE  INDEX IDX_REPSMULTI1_TS ON BCRecMultiArSub(TransState);
+CREATE  INDEX IDX_REPSMULTI1_INVNO ON BCRecMultiArSub(InvoiceNo);
+
+create table BCItemCodeForSale
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	ItemCode	VARCHAR(25),
+	MyDesc		VARCHAR(1000),
+	LineNumber	SMALLINT DEFAULT 0,
+	unitcode	varchar(10),
+	whcode		varchar(10),
+	shelfcode	varchar(10),
+	shortname	VARCHAR(255)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_ITFORSAL_CODE ON BCItemCodeForSale(ItemCode);
+CREATE  INDEX IDX_ITFORSAL_UNIT ON BCItemCodeForSale(unitcode);
+CREATE  INDEX IDX_ITFORSAL_WH ON BCItemCodeForSale(whcode);
+CREATE  INDEX IDX_ITFORSAL_SHELF ON BCItemCodeForSale(shelfcode);
+
+create table BCSysTRFomName
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	TransKey	VARCHAR(255) NOT NULL,
+	FormFileName	VARCHAR(255),
+	FormName	VARCHAR(1000)
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_TRFONASYS_TK	ON BCSysTRFomName(TransKey);
+
+
+create table BCItemClassfication
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(1000),
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+--Prepare payment
+create table BCPaymentTemp
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	TaxNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	DepartCode	VARCHAR(10),
+	SumOfInvoice	FLOAT DEFAULT 0.0,
+	SumOfDebitNote	FLOAT DEFAULT 0.0,
+	SumOfCreditNote	FLOAT DEFAULT 0.0,
+	BeforeTaxAmount FLOAT DEFAULT 0.0,
+	TaxAmount	FLOAT DEFAULT 0.0,
+	TotalAmount	FLOAT DEFAULT 0.0,
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	PettyCashAmount	FLOAT DEFAULT 0.0,
+	SumCashAmount	FLOAT DEFAULT 0.0,
+	SumChqAmount	FLOAT DEFAULT 0.0,
+	SumBankAmount	FLOAT DEFAULT 0.0,
+	SumOfWTax	FLOAT DEFAULT 0.0,
+	GLFormat	VARCHAR(5),
+	GLStartPosting  SMALLINT DEFAULT 0,--1=start posting GL 0=other			
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsPostGL	SMALLINT DEFAULT 0, -- 0=ยังไม่ผ่านรายการ 1=ผ่านรายการแล้ว
+	GLTransData	SMALLINT DEFAULT 0, -- 0=atuo 1=manual
+	MyDescription	VARCHAR(1000),
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),
+	BillGroup	VARCHAR(10),
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยัง 1=หมด
+	SumHomeAmount1 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount1 In Sub) rate เดิม ตัดเจ้าหนี้
+	SumHomeAmount2 FLOAT DEFAULT 0.0, -- ยอดรวมสกุลเงินหลัก (Sum Of HomeAmount2 In Sub) rate ใหม่
+	OtherIncome	FLOAT DEFAULT 0.0, -- รายได้อื่นๆ เพื่อให้ลงบัญชีได้
+	OtherExpense	FLOAT DEFAULT 0.0, --ค่าใช้จ่ายอื่นๆ
+	ExcessAmount1	FLOAT DEFAULT 0.0, --เงินเกินใบเสร็จรับ
+	ExcessAmount2	FLOAT DEFAULT 0.0, --ยอดเงินเกินที่พัดไว้นำมาหักในใบเสร็จ
+	CurrencyCode	VARCHAR(10), -- สกุลเงินที่รับ
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0, -- Rate  ณ ตอนรับ
+	ExchangeProfit	FLOAT DEFAULT 0.0, -- ยอดกำไรขาดทุนทั้งหมด
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	IsConfirm	SMALLINT DEFAULT 0,
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	SumOfDeposit1	FLOAT DEFAULT 0.0, -- Jeab 20030530 สำหรับตัดยอดของบิล
+	SumOfDeposit2	FLOAT DEFAULT 0.0, -- Jeab 20030530 สำหรับ post GL 
+	HomeAmountInv	FLOAT DEFAULT 0.0,
+	HomeAmountDebt	FLOAT DEFAULT 0.0,
+	HomeAmountCrd	FLOAT DEFAULT 0.0,
+	JobNo VARCHAR(20), -- Job สำหรับ GL -- 2003-07-25
+	PrintCount SMALLINT DEFAULT 0, -- Count Print form -- A-20030923
+	SumOfEarnest FLOAT DEFAULT 0.0 -- ยอดเงินล่วงหน้า
+    PRIMARY KEY(DocNo)
+);
+
+CREATE  INDEX IDX_PYMT_DATE ON BCPaymentTemp(DocDate);
+CREATE  INDEX IDX_PYMT_AP ON BCPaymentTemp(ApCode);
+			
+create table BCPaymentTempSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	ApCode	VARCHAR(20),
+	InvoiceDate	DATETIME,
+	InvoiceNo	VARCHAR(20),
+	InvBalance	FLOAT DEFAULT 0.0,
+	PayAmount	FLOAT DEFAULT 0.0,
+	MyDescription	VARCHAR(255),
+	BillType	SMALLINT DEFAULT 0,
+	PaybillNo	VARCHAR(20),
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	InvCurrency	VARCHAR(10), -- รหัสสกุลเงินของบิล
+	InvExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนเดิม
+	NewExchangeRate	DECIMAL(19,10) DEFAULT 1.0,	-- อัตราแลกเปลี่ยนใหม่
+	HomeAmount1	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินเดิม InvExchangeRate * PayAmount
+	HomeAmount2	FLOAT DEFAULT 0.0, -- ยอดลดตามสกุลเงินใหม่ NewExchangeRate * PayAmount
+	ExchangeProfit	FLOAT DEFAULT 0.0  -- กำไร(ขาดทุน) HomeAmount1-HomeAmount2
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_PYMST_NO ON BCPaymentTempSub(DocNo);
+CREATE  INDEX IDX_PYMST_DATE ON BCPaymentTempSub(DocDate);
+CREATE  INDEX IDX_PYMST_AP ON BCPaymentTempSub(ApCode);
+CREATE  INDEX IDX_PYMST_TS ON BCPaymentTempSub(TransState);
+CREATE  INDEX IDX_PYMST_INVNO ON BCPaymentTempSub(InvoiceNo);
+
+CREATE TABLE DocTrans
+(
+	ROWORDER int  NOT NULL IDENTITY(1,1),
+	DocNo VARCHAR(20),
+	DocDate	DATETIME,
+	DocType smallint NOT NULL,--(ตรงกับ prossstock)
+	DocMode smallint NOT NULL, -- (เพิ่ม,ลบ,แก้)
+	IsProcess SMALLINT DEFAULT 0,
+	DocUser	VARCHAR(10), -- รหัสผู้บันทึก
+	DocTimeStamp	DATETIME	-- วันเวลาที่บันทึก (ถ้าไม่ได้ก็แยก field เวลาออก)
+	PRIMARY KEY(ROWORDER)
+);
+
+
+--***********************************
+-- Comment log entry by: Jum
+-- On: 29/9/2547 22:57:01
+-- Request: 
+-- Comments: Promotion config
+--***********************************
+CREATE TABLE BCPromotion
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(20) NOT NULL,
+	DocDate DATETIME,
+	PromotionType SMALLINT DEFAULT 0,--0=FOC,1=Pricing
+	MyDescription VARCHAR(1000),
+	StartSaleArea VARCHAR(10),
+	StopSaleArea VARCHAR(10),
+	StartDate DATETIME,
+	StopDate DATETIME,
+	Iscancel	SMALLINT DEFAULT 0, -- 0 = Enable 1=Disable
+	CustGroup VARCHAR(1000),
+	CustType VARCHAR(1000),
+	StartArcode VARCHAR(25),
+	StopArcode VARCHAR(25),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME
+    PRIMARY KEY(Code)
+);
+
+CREATE  INDEX IDX_BCPROMOTION_1 ON BCPromotion(DocDate);
+
+CREATE TABLE BCPromotionSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code VARCHAR(20),
+	DocDate DATETIME,
+	PromotionType SMALLINT DEFAULT 0,--0=FOC,1=FOC ,2=Pricing,3=Bottom Line discount
+	ItemCode VARCHAR(25),
+	ItemName	VARCHAR(1000),
+	UnitCode VARCHAR(10),
+	Keycode VARCHAR(1000),
+	StartSaleArea VARCHAR(10),
+	StopSaleArea VARCHAR(10),
+	StartDate DATETIME,
+	StopDate DATETIME,
+	Iscancel	SMALLINT DEFAULT 0, -- 0= Enable 1=Disable
+	CustGroup VARCHAR(1000),
+	CustType VARCHAR(1000),
+	StartArcode VARCHAR(25),
+	StopArcode VARCHAR(25),
+	FromQty FLOAT DEFAULT 0.0,
+	ToQty FLOAT DEFAULT 0.0,
+	FromAmt FLOAT DEFAULT 0.0,
+	ToAmt FLOAT DEFAULT 0.0,
+	BillType SMALLINT DEFAULT 0,--see bcarinvoice.billtype
+	FOCItemCode VARCHAR(25),
+	FOCUnitCode VARCHAR(10),
+	FOCQty FLOAT DEFAULT 0.0,
+	PriceperUnit  FLOAT DEFAULT 0.0,
+	DiscountWord VARCHAR(255),
+	Linenumber SMALLINT DEFAULT 0,
+	ItemGroup VARCHAR(10),
+	ItemType VARCHAR(10),
+	PriceLevel SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_BCPROMOTIONSUB_1 ON BCPromotionSub(Code);
+CREATE  INDEX IDX_BCPROMOTIONSUB_2 ON BCPromotionSub(DocDate);
+CREATE  INDEX IDX_BCPROMOTIONSUB_3 ON BCPromotionSub(ItemCode);
+CREATE  INDEX IDX_BCPROMOTIONSUB_4 ON BCPromotionSub(UnitCode);
+
+create table BCDeliveryOrder
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20) NOT NULL,
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0, -- Add 01/12/2002		
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),-- ผู้ขนส่ง
+	DeliveryDate DATETIME,-- วันที่ส่งสินค้า
+	DeliveryAddr VARCHAR(10),-- สถานที่ส่งสินค้า
+	DeliveryTel VARCHAR(1000),-- โทรศัพท์ สถานที่ส่งสินค้า
+	PORefNo	VARCHAR(20), -- อ้างถึงใบสั่งซื้อเลขที่
+	CarLicense	VARCHAR(50), -- ทะเบียนรถ
+	IssueAddr VARCHAR(1000),-- สถานที่เบิกสินค้า
+	SaleDriver VARCHAR(1000),-- ชื่อผู้ขับรถ
+	OwnReceive VARCHAR(1000),-- ผู้รับสินค้า
+	TimeTransport		VARCHAR(10),	-- เวลาข่นส่ง
+	TransportCode	VARCHAR(10),
+	CarType		VARCHAR(10), -- ประเภทรถ
+	MyDescription	VARCHAR(1000),
+	BillStatus	SMALLINT DEFAULT 0, -- 0=ยังไม่หมด 1=ตัดหมดแล้ว
+	IsConfirm	SMALLINT DEFAULT 0,
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	IsProcessOK SMALLINT DEFAULT 0, -- 0=ไม่สำเร็จ 1=สำเร็จ
+	IsCompleteSave	SMALLINT DEFAULT 0, -- 0=ไม่สมบูรณ์ 1=สมบูรณ์
+	RecurName	VARCHAR(40),
+	CreatorCode	VARCHAR(10),
+	CreateDateTime	DATETIME,
+	LastEditorCode	VARCHAR(10),
+	LastEditDateT	DATETIME,
+	ConfirmCode	VARCHAR(10),
+	ConfirmDateTime	DATETIME,
+	CancelCode	VARCHAR(10),
+	CancelDateTime	DATETIME,
+	PrintCount SMALLINT DEFAULT 0, -- Count Print saleorder -- Jeab-20030923 
+	IsImport SMALLINT DEFAULT 0, -- 1= ข้อมูลที่ Import เข้ามา
+	UserGroup VARCHAR(10) -- กลุ่มพนักงาน Jeab 2004-02-03
+    PRIMARY KEY(DocNo)
+);
+	 		
+CREATE  INDEX IDX_DO_DATE ON BCDeliveryOrder(DocDate);
+CREATE  INDEX IDX_DO_AR ON BCDeliveryOrder(ArCode);
+CREATE  INDEX IDX_DO_BS ON BCDeliveryOrder(BillStatus);
+CREATE  INDEX IDX_DO_ROW	ON BCDeliveryOrder(ROWORDER);
+
+create table BCDeliveryOrderSub
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	DocNo	VARCHAR(20),
+	DocDate	DATETIME,
+	TaxType	SMALLINT DEFAULT 0,
+	BillType	SMALLINT DEFAULT 0, -- Add 01/12/2002		
+	DepartCode	VARCHAR(10),
+	ArCode	VARCHAR(20),
+	SaleCode	VARCHAR(10),
+	MyDescription	VARCHAR(255),
+	ItemCode	VARCHAR(25),
+	ItemName	VARCHAR(1000),
+	WHCode	VARCHAR(10),
+	ShelfCode	VARCHAR(15),
+	Qty	FLOAT DEFAULT 0.0,
+	RemainQty	FLOAT DEFAULT 0.0, -- ยอดคงเหลือหลังตัด
+	Price	FLOAT DEFAULT 0.0,
+	DiscountWord	VARCHAR(30),
+	DiscountAmount	FLOAT DEFAULT 0.0,
+	Amount	FLOAT DEFAULT 0.0,
+	NetAmount	FLOAT DEFAULT 0.0,
+	HomeAmount FLOAT DEFAULT 0.0, -- NetAmount * ExchangeRate
+	UnitCode	VARCHAR(10),
+	OppositePrice2	FLOAT DEFAULT 0.0, -- ราคาต่อหน่วยที่ 2 (เส้น)
+	OppositeUnit	VARCHAR(10),
+	OppositeQty	FLOAT DEFAULT 0.0,
+	StkReserveNo	VARCHAR(20),
+	SOStatus	SMALLINT DEFAULT 0, -- 0=สั่งขาย 1=สั่งจอง
+	StockType	SMALLINT DEFAULT 0,
+	SORefNo	VARCHAR(20), -- Total SO reference -- Jeab 19-04-2003 -- A& 
+	ExceptTax	SMALLINT DEFAULT 0,  -- 0=คิดภาษี 1=ยกเว้นภาษี 2=ภาษีอัตราศูนย์
+	AllocateCode	VARCHAR(10),
+	ProjectCode	VARCHAR(10),	
+	CurrencyCode	VARCHAR(10),
+	ExchangeRate	DECIMAL(19,10) DEFAULT 1.0,
+	TransState 	SMALLINT DEFAULT 0, -- 0 = new transaction 1 = old transaction 
+	IsCancel	SMALLINT DEFAULT 0, -- 0=ยังไม่Cancel 1=Cancel
+	LineNumber SMALLINT DEFAULT 0,
+	RefLineNumber SMALLINT DEFAULT 0, -- Line Number ของสินค้าที่อ้างอิงมาจากเอกสารอื่น
+	CategoryCode	VARCHAR(10),	-- หมวด
+	GroupCode	VARCHAR(10),	-- กลุ่ม
+	BrandCode	VARCHAR(10), -- ยี่ห้อ
+	TypeCode	VARCHAR(10),	-- ประเภท	
+	FormatCode	VARCHAR(10),	-- รูปแบบ
+	BarCode	VARCHAR(20),
+	IsConditionSend SMALLINT DEFAULT 0,-- เงื่อนไขการรับสินค้า 0 = รับเอง, 1 = ส่งให้
+	TransportAmount	FLOAT DEFAULT 0.0, -- ค่าขนส่ง
+	OtherValue	FLOAT DEFAULT 0.0, -- ค่าอื่น
+	REMAINPAYQTY	FLOAT DEFAULT 0.0,
+	ISPAYMENT SMALLINT DEFAULT 0, 	--1=เอาไปทำใบจ่ายได้	
+	Colorcode VARCHAR(10)	,
+	SizeCode VARCHAR(10),
+	StyleCode VARCHAR(10),
+	itemsetcode VARCHAR(25),
+	PORefNo VARCHAR(20),
+	BehindIndex	SMALLINT DEFAULT 1,
+	TaxRate	MONEY DEFAULT 0.0,
+	PackingRate1 	MONEY DEFAULT 0.0,
+	PackingRate2 	MONEY DEFAULT 0.0,
+	UserGroup VARCHAR(10), -- กลุ่มพนักงาน Jeab 2004-02-03
+	IsProcess SMALLINT DEFAULT 0,
+	IsLockCost SMALLINT DEFAULT 0
+    PRIMARY KEY(ROWORDER)
+);
+
+CREATE  INDEX IDX_DOS_DATE ON BCDeliveryOrderSub(DocDate);
+CREATE  INDEX IDX_DOS_NO ON BCDeliveryOrderSub(DocNo);
+CREATE  INDEX IDX_DOS_AR ON BCDeliveryOrderSub(ArCode);
+CREATE  INDEX IDX_DOS_SALE ON BCDeliveryOrderSub(SaleCode);
+CREATE  INDEX IDX_DOS_RQTY	ON BCDeliveryOrderSub(RemainQty);
+CREATE  INDEX IDX_DOS_TS ON BCDeliveryOrderSub(TransState);
+CREATE  INDEX IDX_DOS_SERVICE ON BCDeliveryOrderSub(ItemCode,DocDate,BehindIndex);
+CREATE  INDEX IDX_DOS_SISPROCESS ON BCDeliveryOrderSub(ItemCode,IsProcess);
+CREATE  INDEX IDX_DOS_PAK1 ON BCDeliveryOrderSub(PackingRate1);
+CREATE  INDEX IDX_DOS_PAK2 ON BCDeliveryOrderSub(PackingRate2);
+
+create table bcappconfig
+(
+	keycode varchar(20) not null,
+	keyvalue VARCHAR(255)
+	primary key (keycode)
+);
+
+
+--For : BCCRM
+--Comments : Last edit 31-05-2005
+--By : Aom
+create table user_password (	
+	roworder int not null identity(0,1),
+	code varchar (50)  not null ,
+	password varchar (50) null ,
+	ltd_code varchar (20) 
+	primary key(roworder) 
+);
+CREATE  UNIQUE INDEX IDX_PWS ON user_password(code);
+
+create table user_list (
+	roworder int not null identity(0,1),
+	code varchar (50) not null ,
+	name varchar (50) null ,
+	address varchar (255)  null ,
+	telephone varchar (50) null ,
+	picture varchar (255) null ,
+	status smallint null default 1,
+	ltd_code varchar (20)
+     primary key(code)	
+);
+CREATE  UNIQUE INDEX IDX_UL ON user_list(code);
+
+create table user_by_group (
+	roworder int not null identity(0,1),
+	groupcode varchar (25) null ,
+	usercode varchar (25)  null ,
+	ltd_code varchar (20)
+     primary key(roworder)	
+);
+
+create table session_list (
+	roworder int not null identity(0,1),
+	guid varchar (35)  null ,
+	usercode varchar (25)  null ,
+	username varchar (100) null ,
+	database_code varchar (10)  null ,
+	logintime datetime null ,
+	worktime datetime null ,
+	ltd_code varchar (20)
+     primary key(roworder)	
+);
+
+create table resource (
+	roworder int not null identity(0,1),
+	code varchar (100)  null ,
+	name1 varchar (100)  null ,
+	name2 varchar (100)  null ,
+	name3 varchar (100)  null ,
+	ltd_code varchar (20)
+     primary key(roworder)	
+);
+CREATE  UNIQUE INDEX IDX_RES ON resource(code);
+
+create table group_list (
+	roworder int not null identity(0,1),
+	code varchar (25)  not null ,
+	name varchar (100) null ,
+	status smallint null ,
+	ltd_code varchar (20)
+     primary key(code)	
+);
+
+create table ltd (
+	roworder int not null identity(0,1),
+	code varchar (10)  null ,
+	name varchar (100)  null ,
+	status smallint null ,
+	ltd_code varchar (20)
+     primary key(roworder)	
+);
+CREATE  UNIQUE INDEX IDX_LTD ON ltd(code);
+
+create table ltd_by_user (
+	roworder int not null identity(0,1),
+	ltdcode varchar (10) null ,
+	usercode varchar (25) null ,
+	is_supervisor tinyint null ,
+	ltd_code varchar (20)
+     primary key(roworder)	
+);
+
+
+--Main Table
+create table crm_appoint
+(
+	roworder int not null identity(0,1),
+	code	varchar(10) not null,
+	name	VARCHAR(255) not null,
+	usergroup VARCHAR(1000) ,
+	ltd_code varchar (20)
+    primary key(code)
+);
+
+create table crm_artypecontact
+(
+	roworder int not null identity(0,1),
+	code	varchar(10) not null,
+	name	VARCHAR(255) not null,
+	usergroup VARCHAR(1000) ,
+	ltd_code varchar (20)
+    primary key(code)
+);
+
+create table crm_publish
+(
+	roworder int not null identity(0,1),
+	code	varchar(10) not null,
+	name	VARCHAR(255) not null,
+	usergroup VARCHAR(1000) ,
+	ltd_code varchar (20)
+    primary key(code)
+);
+--Main Table
+
+CREATE TABLE crm_appointment (
+	roworder INT NOT NULL IDENTITY(0,1),
+	app_usercodetime varchar (50)  ,
+	app_empcode varchar (25)  ,
+	app_empdate varchar (50)  ,
+	app_emptime varchar (50)  ,
+	app_custno varchar (25)  ,
+	app_custname varchar (100)  ,
+	app_address varchar (255)  ,
+	app_province varchar (50)  ,
+	app_zipcode varchar (20)  ,
+	app_telephone varchar (50)  ,
+	app_fax varchar (50)  ,
+	app_mobile varchar (50)  ,
+	app_email varchar (50)  ,
+	app_website varchar (100)  ,
+	app_callback varchar (50)  ,
+	app_custtype smallint NULL ,
+	app_type varchar (50)  ,
+	app_important smallint NULL ,
+	app_title varchar (100)  ,
+	app_detail varchar (255)  ,
+	app_place varchar (255)  ,
+	app_accessory varchar (255)  ,
+	usercode varchar (20)  ,
+	app_userdatetime varchar (50)  ,
+	ltd_code varchar (20)   
+PRIMARY KEY(roworder)
+);
+
+CREATE TABLE crm_arrears (
+	roworder int IDENTITY (1, 1)  NOT NULL ,
+	arr_docno varchar (20) NOT NULL ,
+	arr_refcode varchar (20) NULL ,
+	arr_docdate datetime NULL ,
+	arr_empcode varchar (20) NULL ,
+	arr_custcode varchar (20) NULL ,
+	arr_type smallint NULL ,
+	arr_status smallint NULL ,
+	arr_startdate datetime NULL ,
+	arr_enddate datetime NULL ,
+	arr_callback varchar (20) NULL ,
+	arr_tel_callback varchar (20) NULL ,
+	arr_detail varchar (255) NULL ,
+	arr_description nvarchar (255) NULL ,
+	arr_userclosejob varchar (20) NULL ,
+	arr_userreassignor varchar (20) NULL ,
+	arr_usercode varchar (20) NULL ,
+	ltd_code varchar (10) NULL 
+	PRIMARY KEY(roworder)
+) ;
+CREATE  UNIQUE INDEX IDX_ARR_DN ON crm_arrears(arr_docno);
+
+CREATE TABLE crm_arrearsclose (
+	roworder int IDENTITY (1, 1)  NOT NULL ,
+	refcode varchar (20)  NOT NULL ,
+	docdate datetime NULL ,
+	detail varchar (255)  NULL ,
+	remark nvarchar (255)  NULL ,
+	usercode varchar (20)  NULL ,
+	ltd_code varchar (10)  NULL 
+	PRIMARY KEY(roworder)
+) ;
+
+CREATE TABLE crm_arrearsdetail (
+	roworder int IDENTITY (1, 1)  NOT NULL ,
+	refcode varchar (20) NULL ,
+	docdate datetime NULL ,
+	description nvarchar (255) NULL ,
+	usercode varchar (20) NULL ,
+	ltd_code varchar (10) NULL 
+	PRIMARY KEY(roworder)
+) ;
+
+CREATE TABLE crm_arrearsrecive (
+	roworder int IDENTITY (1, 1)  NOT NULL ,
+	arr_refcode varchar (20) NULL ,
+	arr_docdate datetime NULL ,
+	arr_custcode varchar (20) NULL ,
+	arr_departcode varchar (20) NULL ,
+	arr_callback varchar (255) NULL ,
+	arr_tel_callback varchar (50) NULL ,
+	arr_startdate datetime NULL ,
+	arr_enddate datetime NULL ,
+	arr_detail varchar (255) NULL ,
+	arr_description nvarchar (255) NULL ,
+	arr_type smallint NULL ,
+	status smallint NULL ,
+	arr_receivedate datetime NULL ,
+	arr_empcode varchar (20) NULL ,
+	isassing smallint NULL ,
+	olddocno varchar (20) NULL ,
+	usercode varchar (20) NULL ,
+	ltd_code varchar (10) NULL 
+	PRIMARY KEY(roworder)
+) ;
+
+CREATE TABLE crm_callcenter (
+	roworder int IDENTITY (1, 1)   NOT NULL ,
+	ca_docno varchar (20)  NULL ,
+	ca_docdate datetime NULL ,
+	ca_datetime varchar (20) NULL ,
+	ca_custcode varchar (20) NULL ,
+	ca_custname varchar (100) NULL ,
+	ca_empcode varchar (20) NULL ,
+	ca_departcode varchar (20) NULL ,
+	ca_callback varchar (50) NULL ,
+	ca_tel_callback varchar (20) NULL ,
+	ca_username varchar (100) NULL ,
+	ca_detail varchar (255) NULL ,
+	ca_description nvarchar (255) NULL ,
+	status smallint NULL ,
+	usercode varchar (20) NULL ,
+	ltd_code varchar (20) NULL 
+	PRIMARY KEY(roworder)
+) ;
+CREATE  UNIQUE INDEX IDX_CALL_DN ON crm_callcenter (ca_docno);
+
+CREATE TABLE crm_note (
+	roworder int NOT NULL IDENTITY (1, 1) ,
+	nt_docno varchar (20)  NOT NULL ,
+	nt_date  datetime NULL ,
+	nt_time  varchar(10) NULL ,
+	nt_subject varchar (100)  NULL ,
+	nt_description varchar (255)  NULL ,
+	ltd_code varchar (20) NULL ,
+	usercode varchar (20) NULL 	
+	primary key(nt_docno)
+) ;
+
+CREATE TABLE crm_notedetail (
+	roworder int NOT NULL IDENTITY (1, 1) ,
+	nt_docno varchar (20)  NOT NULL ,
+	nt_empcode varchar (20)  NOT NULL ,
+	nt_employee nVARCHAR(1000) NULL ,
+	ltd_code varchar (20) NULL ,
+	usercode varchar (20) NULL 
+	primary key(roworder)
+) ;
+
+CREATE TABLE crm_new (
+	roworder int NOT NULL IDENTITY (1, 1) ,
+	nw_docno varchar (20)  NOT NULL ,
+	nw_date datetime NULL ,
+	nw_expire datetime NULL ,
+	nw_time VARCHAR(255) NULL ,
+	nw_subject varchar (50)  NULL ,
+	nw_description varchar (255)  NULL ,
+	ltd_code varchar (20) NULL ,
+	usercode varchar (20) NULL 
+	primary key(nw_docno)
+) ;
+
+CREATE TABLE crm_custlike (
+	roworder int IDENTITY (1, 1)   NOT NULL ,
+	cust_code varchar (20)  NOT NULL ,
+	cust_name1 varchar (255) NULL ,
+	like_detail varchar (255) NULL ,
+	like_comment varchar (255) NULL ,
+	usercode varchar (20) NULL ,
+	ltd_code varchar (20) NULL 
+	PRIMARY KEY(roworder)
+) ;
+CREATE  UNIQUE INDEX IDX_CNL_C ON crm_custlike(cust_code);
+
+CREATE TABLE crm_custnotlike (
+	roworder int IDENTITY (1, 1)   NOT NULL ,
+	cust_code varchar (20)  NOT NULL ,
+	cust_name1 varchar (255) NULL ,
+	notlike_detail varchar (255) NULL ,
+	notlike_comment varchar (255) NULL ,
+	usercode varchar (20) NULL ,
+	ltd_code varchar (20) NULL 
+	PRIMARY KEY(roworder)
+) ;
+CREATE  UNIQUE INDEX IDX_CL_C ON crm_custnotlike(cust_code);
+
+CREATE TABLE crm_contact (
+	roworder int  NOT NULL IDENTITY (1, 1)  ,
+	cont_docno varchar (20) NULL ,
+	cont_docdate datetime NULL ,
+	cont_doctime varchar (20) NULL ,
+	cont_cusno varchar (20) NULL ,
+	cont_cusname varchar (150) NULL ,
+	cont_address varchar (255) NULL ,
+	cont_province varchar (50) NULL ,
+	cont_zipcode varchar (20) NULL ,
+	cont_telephone varchar (50) NULL ,
+	cont_fax varchar (50) NULL ,
+	cont_mobile varchar (50) NULL ,
+	cont_email varchar (100) NULL ,
+	cont_website varchar (100) NULL ,
+	cont_backcontact varchar (150) NULL ,
+	cont_custype smallint NULL ,
+	cont_conttype varchar (50) NULL ,
+	cont_newdescription varchar (50) NULL ,
+	cont_urgent smallint NULL ,
+	cont_empno varchar (20) NULL ,
+	cont_empname varchar (150) NULL ,
+	cont_detail varchar (255) NULL ,
+	ltd_code varchar (50) NULL ,
+	usercode varchar (20) NULL ,
+	cont_status smallint NULL
+	PRIMARY KEY(roworder)
+);
+CREATE  UNIQUE INDEX IDX_CON_DN ON crm_contact (cont_docno);
+
+insert into user_password(code) values('admin');
+insert into user_list(code) values('admin');
+
+--for BCConfigurations
+update bcconfigurations set itemamountpoint=costpoint where itemamountpoint is null;
+update bcconfigurations set IsStockAmounttype=0 where IsStockAmounttype is null;
+update bcconfigurations set IsReturnType=0 where IsReturnType is null;
+
+create table BCRegion
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(50) NOT NULL,
+	IsExport smallint default 0,
+	CreatorCode VARCHAR(10),
+	CreateDateTime DATETIME,
+	LastEditorCode VARCHAR(10),
+	LastEditDateT DATETIME,
+	UserGroup VARCHAR(1000)
+    PRIMARY KEY(CODE)
+);
+
+create table BCProvince
+(
+	ROWORDER INT NOT NULL IDENTITY(0,1),
+	Code	VARCHAR(10) NOT NULL,
+	Name	VARCHAR(1000) NOT NULL,
+	UserGroup VARCHAR(1000),
+	NameEng VARCHAR(1000),
+	RegionCode varchar(10),
+	SaleAreaCode varchar(10),
+	IsExport smallint default 0,
+	CreatorCode VARCHAR(10),
+	CreateDateTime DATETIME,
+	LastEditorCode VARCHAR(10),
+	LastEditDateT DATETIME	
+    PRIMARY KEY(CODE)
+);
+
+
+--
+-- BC DTS script
+--
+--
+create table BCACCGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCACCSEPARATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCALLOCATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPBANKBOOK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPDEBTTABLE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPDEPOSIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPDEPOSITSPECIAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPDEPOSITUSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPINSTALMENT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPINVBALANCE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPINVOICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPINVOICESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPOTHERDEBT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPPCONFIG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPPERIODSTATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPRETURNDEPSPECIAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAPWTAXLIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARBARCODEMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARCREDITGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARCREDITGRPDE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARDEBTGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARDEBTTABLE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARDEPOSIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARDEPOSITSPECIAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARDEPOSITUSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARINSTALMENT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARINVBALANCE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARINVOICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARINVOICEDEL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARINVOICESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAROTHERDEBT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARPERIODSTATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARPRICELIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCARWTAXLIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSLOCATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSOFBLDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSOFBUILD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSOFPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSOFYEAR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCASSETSTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAUTOPROCHIST2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCAUTOPROCHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKACCOUNT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKBOOK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKBRANCH(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKCONHD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKCONTACT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKCURRENCY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKEXPENSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKINCOME(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKINTERESTS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKSERVICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBANKTRANSFER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBARCODEMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBRANCH(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBUYPRICECONDIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCBYPRICECONDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCANCELREASON(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCAR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCARIDFORPO(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCASHBANKIN(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCASHBANKOUT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCATCHPROCCESS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHARTOFACCOUNT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQIN(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINCANCEL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINCANCELSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINDEPO2SUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINDEPOSIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINDEPOSIT2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINDEPOSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINPASS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINPASSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINRETSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINRETURN(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINSALE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQINSALESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQOUT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQOUTCANCEL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQOUTCANCELSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQOUTPASS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQOUTPASSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQSTATUS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCHQSTATUSLOG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCLOSEPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCLSPDHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCNMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCOMOIL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCOMOILSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDDOCDATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDITPAY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDITPAYSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDLINKCODE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONDORDERBY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONFIGURATIONS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONFIGURATIONS2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCONTACTLIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCOUPON(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCOUPONRECEIVE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCOUPONTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITCANCEL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITCANCELSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITCARD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITLIMIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITNOTE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITNOTESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITPASS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCREDITPASSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCUREXCHANGERATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCURRENCY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCURRENCYEXCH(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCURRENCYLOG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCCUSTTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEBITNOTE1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEBITNOTE2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEBITNOTESUB1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEBITNOTESUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDELIVERYADDR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDELIVERYORDER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDELIVERYORDERCONDITION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDELIVERYORDERSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEPARTMENT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCDEVREPORTLIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCENQUIREPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCENQUIREPRICESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCFINISHGOODS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCFINISHGOODSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCFORMULA(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCFORMULASUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGENERIC(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLBOOK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLBUDGET(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLCHQ(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLCONDITION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLFORMAT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLFORMATSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGLPOSTQUE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGOODSRECCHECK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCGOODSRECCHKSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCHISTORYADJUSTPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCHISTORYMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINCOMECHK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINPUTTAX(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINQUIRY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINQUIRYSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINSURETYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINTERESTSLOG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINVCREDITNOTE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINVDEBITNOTE1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINVDEBITNOTE2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINVOICETYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCINVSTKREFUND(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCIRSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCISSUETYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEM(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMACCGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMBILLDESC(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMBRAND(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMCATEGORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMCLASSFICATION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMCODEFORSALE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMCOLOR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMCOMPONENTS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMFORMAT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMMATCH(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMPUBLISHER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMRENOVATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSET(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSETDETAIL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSIZE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSTANDARDCOST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSTATUS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSTYLE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSUBSTITUTE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMSUPPLIER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMUNIT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCITEMWAREHOUSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCJOB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCLOTMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCLOTMASTERHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCLOTMASTERPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCLOTOUT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCMAILCONFIG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCMANUFACTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCMAP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCMEMBERREWARD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCMMBREWARDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCOTHEREXPENSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCOTHEREXPENSE2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCOTHEREXPSUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCOTHERINCOME(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCOUTPUTTAX(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPACKINGLIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPART(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYBILL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYBILLSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENT2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENTSUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENTTEMP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENTTEMPSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYMENTTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYFLOAT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYFLOAT2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPAYSUBTEMP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPERIODBALANCE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPETTYCASH(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPOSTHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPOSTTRANS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPOVOID(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPOVOIDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPRICEERECT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPRICELIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPRICELIST2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPRICELIST2HEAD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPROJECT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPROMOPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPROMOTION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPROMOTIONSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPROVINCE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPURCHASEORDER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCPURCHASEORDERSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCQUOTATION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCQUOTATIONSTATUS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCQUOTATIONSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECBILLITEMSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPT1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPT2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPT3(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPTMULTIAR(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPTSPECIAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPTSUB1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPTSUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIPTSUB3(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECEIVEMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECFLOAT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECMULTIARSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECPOINT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECPRODUCT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECSUBTEMP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECURTEMP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRECURTEMPSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCREGION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRENOVATE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRENOVATESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCREQCONFIRM(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCREQCONFIRMSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCRETURNDEPSPECIAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCROUTE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSALE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSALEAREA(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSALEORDER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSALEORDERSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSERIALMASTER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSERIALPRINTFORM(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSERIALTRANS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSERVICEFEE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSHELF(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSIDE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSOVOID(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSOVOIDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTANDARDPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTATEMENT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTATEMENTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKADJUST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKADJUSTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKBALANCE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKBALANCESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKINSPECT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKINSPECTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSRETSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSUE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSUE2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSUERET(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSUESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKISSUESUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKLOCATION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKLOCATIONHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKLOCATIONPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKPACKING(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKPERIODBAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKREFUND(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKREFUNDSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKREQUEST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKREQUESTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKRESERVE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKRESERVESUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKTRANSFER(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKTRANSFER2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKTRANSFSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKTRANSFSUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKTRANSFSUB3(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKWAREHOUSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKWAREHOUSEHISTORY(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKWAREHOUSEPERIOD(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSTKWHPERIODBAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSUPPLIERPROMO(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSTRDOCG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSTRFIND(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSTRFOM(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSTRFOMNAME(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSTRFORMAT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCSYSUPDATEPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTERMCONDITION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTERMCONDITION1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTRANS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTRANSPORT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTRANSSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCTRNASPORTLINE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCUPDATESCRIPT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCUSERGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCUSERLOGBOOK(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCWAREHOUSE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCWEIGHTCOST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCWEIGHTCOSTSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+create table BCYEARPERIODBAL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPCRSERVICETRANS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSCASHIERINC(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSCASHIERSHIFT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSCONFIG(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSCREDITSERVICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSCREDITTYPE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSHELF(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSHELFTRANS(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSHOLDINGBILL(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSHOLDINGBILLSUB(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSITEMPROMOTION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSMACHINE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPRICELIST(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPRICELIST2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPROMOGROUP(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPROMOPRICE(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPROMOTION(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPROMOTIONSUB1(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSPROMOTIONSUB2(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSRETURNDESC(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+--create table BPSSHIFT(IsExport smallint default 0,CreatorCode VARCHAR(10),CreateDateTime DATETIME,LastEditorCode VARCHAR(10),LastEditDateT DATETIME);
+ 
